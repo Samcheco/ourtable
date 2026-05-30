@@ -215,15 +215,19 @@ export default function AddVisit() {
           <div className="flex flex-col gap-3">
             <div>
               <label className="block text-xs text-stone-400 mb-1">Date</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} required
-                className="w-full px-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              <div className="w-full rounded-xl border border-stone-200 overflow-hidden focus-within:ring-2 focus-within:ring-amber-400">
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} required
+                  className="w-full px-3 py-3 text-base bg-white focus:outline-none appearance-none" />
+              </div>
             </div>
             <div>
               <label className="block text-xs text-stone-400 mb-1">Occasion</label>
-              <select value={occasion} onChange={e => setOccasion(e.target.value)}
-                className="w-full px-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400">
-                {OCCASIONS.map(o => <option key={o}>{o}</option>)}
-              </select>
+              <div className="w-full rounded-xl border border-stone-200 overflow-hidden focus-within:ring-2 focus-within:ring-amber-400">
+                <select value={occasion} onChange={e => setOccasion(e.target.value)}
+                  className="w-full px-3 py-3 text-base bg-white focus:outline-none appearance-none">
+                  {OCCASIONS.map(o => <option key={o}>{o}</option>)}
+                </select>
+              </div>
             </div>
           </div>
         </div>
