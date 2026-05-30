@@ -49,8 +49,8 @@ export default function AddReviewModal({ visitId, reviewer, existing, onClose, o
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md overflow-y-auto shadow-2xl" style={{ maxHeight: 'calc(100dvh - 80px)' }}>
         <div className="flex items-center justify-between p-5 border-b border-amber-50">
           <h2 className="font-['Playfair_Display'] text-xl font-semibold text-stone-800">
             {existing ? 'Edit' : 'Add'} {reviewer === 'sam' ? "👨🏻‍🍳 Sam's" : "👩🏾‍🍳 Olivia's"} Review

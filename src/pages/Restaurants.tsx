@@ -60,23 +60,28 @@ export default function Restaurants() {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl p-4 border border-amber-50 shadow-sm mb-6 flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-48">
+      <div className="bg-white rounded-2xl p-4 border border-amber-50 shadow-sm mb-6 flex flex-col gap-3">
+        {/* Search */}
+        <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search restaurants..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+            className="w-full pl-9 pr-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400" />
         </div>
-        <select value={cuisine} onChange={e => setCuisine(e.target.value)} className="px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
-          {CUISINES.map(c => <option key={c}>{c}</option>)}
-        </select>
-        <select value={sort} onChange={e => setSort(e.target.value)} className="px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
-          {SORT_OPTIONS.map(o => <option key={o}>{o}</option>)}
-        </select>
-        <div className="flex gap-1">
+        {/* Cuisine + Sort side by side */}
+        <div className="flex gap-2">
+          <select value={cuisine} onChange={e => setCuisine(e.target.value)} className="flex-1 px-3 py-3 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            {CUISINES.map(c => <option key={c}>{c}</option>)}
+          </select>
+          <select value={sort} onChange={e => setSort(e.target.value)} className="flex-1 px-3 py-3 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            {SORT_OPTIONS.map(o => <option key={o}>{o}</option>)}
+          </select>
+        </div>
+        {/* Price filter */}
+        <div className="flex gap-2">
           {[null, 1, 2, 3, 4].map(p => (
             <button key={p ?? 'all'} onClick={() => setPriceFilter(p)}
-              className={`px-3 py-2 rounded-lg border text-sm transition-colors ${priceFilter === p ? 'bg-amber-600 border-amber-600 text-white' : 'border-stone-200 text-stone-600 hover:border-amber-400'}`}>
-              {p === null ? 'All $' : '$'.repeat(p)}
+              className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${priceFilter === p ? 'bg-amber-600 border-amber-600 text-white' : 'border-stone-200 text-stone-600'}`}>
+              {p === null ? 'All' : '$'.repeat(p)}
             </button>
           ))}
         </div>

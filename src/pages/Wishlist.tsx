@@ -92,7 +92,7 @@ export default function Wishlist() {
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
             <input value={query} onChange={e => handleSearch(e.target.value)} placeholder="Search to auto-fill..."
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+              className="w-full pl-9 pr-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400" />
             {results.length > 0 && (
               <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden">
                 {results.map(r => (
@@ -106,11 +106,11 @@ export default function Wishlist() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="text-xs text-stone-500 block mb-1">Name *</label>
-              <input value={name} onChange={e => setName(e.target.value)} required className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" /></div>
+              <input value={name} onChange={e => setName(e.target.value)} required className="w-full px-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400" /></div>
             <div><label className="text-xs text-stone-500 block mb-1">Address</label>
-              <input value={address} onChange={e => setAddress(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" /></div>
+              <input value={address} onChange={e => setAddress(e.target.value)} className="w-full px-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400" /></div>
             <div><label className="text-xs text-stone-500 block mb-1">Cuisine</label>
-              <select value={cuisine} onChange={e => setCuisine(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+              <select value={cuisine} onChange={e => setCuisine(e.target.value)} className="w-full px-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400">
                 {CUISINES.map(c => <option key={c}>{c}</option>)}
               </select></div>
             <div><label className="text-xs text-stone-500 block mb-1">Price</label>
@@ -119,7 +119,7 @@ export default function Wishlist() {
               ))}</div></div>
             <div className="col-span-2"><label className="text-xs text-stone-500 block mb-1">Notes</label>
               <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Why you want to try it..."
-                className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" /></div>
+                className="w-full px-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400" /></div>
             <div><label className="text-xs text-stone-500 block mb-1">Added by</label>
               <div className="flex gap-2">{(['sam', 'olivia'] as Reviewer[]).map(r => (
                 <button key={r} type="button" onClick={() => setAddedBy(r)} className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${addedBy === r ? 'bg-amber-600 text-white' : 'bg-amber-50 text-stone-600'}`}>

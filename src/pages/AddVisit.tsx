@@ -186,20 +186,20 @@ export default function AddVisit() {
               </div>
             )}
 
-            <div className="flex gap-3">
-              <div className="flex-1">
+            <div className="flex flex-col gap-3">
+              <div>
                 <label className="block text-xs text-stone-400 mb-1">Cuisine</label>
                 <select value={cuisine} onChange={e => setCuisine(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                  className="w-full px-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400">
                   {CUISINES.map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-stone-400 mb-1">Price</label>
-                <div className="flex gap-1">
+                <label className="block text-xs text-stone-400 mb-1">Price Range</label>
+                <div className="flex gap-2">
                   {[1, 2, 3, 4].map(p => (
                     <button key={p} type="button" onClick={() => setPriceRange(p)}
-                      className={`px-2.5 py-2 rounded-xl border text-sm font-medium transition-colors ${priceRange === p ? 'bg-amber-600 border-amber-600 text-white' : 'border-stone-200 text-stone-500 hover:border-amber-400'}`}>
+                      className={`flex-1 py-3 rounded-xl border text-sm font-medium transition-colors ${priceRange === p ? 'bg-amber-600 border-amber-600 text-white' : 'border-stone-200 text-stone-500'}`}>
                       {'$'.repeat(p)}
                     </button>
                   ))}
@@ -212,16 +212,16 @@ export default function AddVisit() {
         {/* Visit details */}
         <div className="bg-white rounded-2xl p-5 border border-amber-50 shadow-sm">
           <p className="font-semibold text-stone-700 mb-3">Visit</p>
-          <div className="flex gap-3">
-            <div className="flex-1">
+          <div className="flex flex-col gap-3">
+            <div>
               <label className="block text-xs text-stone-400 mb-1">Date</label>
               <input type="date" value={date} onChange={e => setDate(e.target.value)} required
-                className="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                className="w-full px-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400" />
             </div>
-            <div className="flex-1">
+            <div>
               <label className="block text-xs text-stone-400 mb-1">Occasion</label>
               <select value={occasion} onChange={e => setOccasion(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                className="w-full px-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400">
                 {OCCASIONS.map(o => <option key={o}>{o}</option>)}
               </select>
             </div>

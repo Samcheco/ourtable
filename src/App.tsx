@@ -16,7 +16,8 @@ export default function App() {
       <DataProvider>
       <div className="min-h-screen bg-[#fdf8f3]">
         <Navbar />
-        <main className="pb-4">
+        {/* pb-24 on mobile = 96px clears the 64px tab bar + breathing room */}
+        <main className="pb-6 sm:pb-6" style={{ paddingBottom: 'max(24px, calc(env(safe-area-inset-bottom) + 80px))' }}>
 
           <Routes>
             <Route path="/" element={<Home />} />
