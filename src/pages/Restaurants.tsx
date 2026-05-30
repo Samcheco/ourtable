@@ -52,7 +52,7 @@ export default function Restaurants() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 pt-4 pb-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-['Playfair_Display'] text-3xl font-bold text-stone-800">Restaurants</h1>
         <button onClick={pickRandom} className="flex items-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors">

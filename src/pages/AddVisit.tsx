@@ -137,7 +137,7 @@ export default function AddVisit() {
   }
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-8">
+    <div className="max-w-xl mx-auto px-4 pt-4 pb-8">
       <h1 className="font-['Playfair_Display'] text-3xl font-bold text-stone-800 mb-8">Add a Visit</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">

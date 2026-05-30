@@ -14,7 +14,7 @@ export default function Home() {
   const avgOf = (arr: typeof reviews) => arr.length ? (arr.reduce((s, r) => s + r.overall_rating, 0) / arr.length).toFixed(1) : '—'
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 pt-4 pb-8">
       <div className="text-center mb-10">
         <h1 className="font-['Playfair_Display'] text-4xl font-bold text-amber-900 mb-2">Our Table 🍽️</h1>
         <p className="text-stone-500 text-lg">Sam & Olivia's food diary</p>

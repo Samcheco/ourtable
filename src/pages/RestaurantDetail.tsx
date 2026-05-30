@@ -62,7 +62,7 @@ export default function RestaurantDetail() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 pt-4 pb-8">
       <Link to="/restaurants" className="inline-flex items-center gap-1 text-stone-400 hover:text-stone-600 mb-6 text-sm">
         <ArrowLeft size={14} /> Back to restaurants
       </Link>

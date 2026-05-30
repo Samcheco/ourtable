@@ -117,7 +117,7 @@ export default function ForYou() {
   const noReviewsYet = reviews.length < 3
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <div className="max-w-2xl mx-auto px-4 pt-4 pb-6">
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="font-['Playfair_Display'] text-2xl font-bold text-stone-800">For You ✨</h1>

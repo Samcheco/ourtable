@@ -64,7 +64,7 @@ export default function Wishlist() {
   const filtered = wishlist.filter(w => filterBy === 'all' || w.added_by === filterBy)
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 pt-4 pb-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-['Playfair_Display'] text-3xl font-bold text-stone-800">Wish List 💫</h1>
         <div className="flex gap-2">

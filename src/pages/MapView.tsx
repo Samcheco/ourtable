@@ -30,7 +30,7 @@ export default function MapView() {
     : [40.7128, -74.006]
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 pt-4 pb-8">
       <h1 className="font-['Playfair_Display'] text-3xl font-bold text-stone-800 mb-6">Map</h1>
       <div className="rounded-2xl overflow-hidden shadow-sm border border-amber-50" style={{ height: '600px' }}>
         <MapContainer center={center} zoom={enriched.length ? 13 : 12} style={{ height: '100%', width: '100%' }}>
