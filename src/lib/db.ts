@@ -76,6 +76,11 @@ export async function deleteVisit(id: string): Promise<void> {
   await supabase.from('visits').delete().eq('id', id)
 }
 
+export async function deleteRestaurant(id: string): Promise<void> {
+  if (!USE_SUPABASE) return
+  await supabase.from('restaurants').delete().eq('id', id)
+}
+
 // ── Reviews ──────────────────────────────────────────────────────────────────
 
 export async function saveReview(r: Omit<Review, 'id' | 'created_at'>): Promise<Review> {

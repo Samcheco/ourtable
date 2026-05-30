@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { MapPin, Globe, Phone, ArrowLeft, Plus, Trash2, PenLine } from 'lucide-react'
 import * as db from '../lib/db'
@@ -13,6 +13,7 @@ import { isReviewSealed, sealedMinsLeft as sealMinsLeft } from '../lib/seal'
 export default function RestaurantDetail() {
   const { id } = useParams<{ id: string }>()
   const { refresh } = useData()
+  const navigate = useNavigate()
   const [restaurant, setRestaurant] = useState<Restaurant | undefined>()
   const [visits, setVisits] = useState<Visit[]>([])
   const [reviewModal, setReviewModal] = useState<{ visitId: string; reviewer: Reviewer } | null>(null)
@@ -44,6 +45,13 @@ export default function RestaurantDetail() {
 
   const isSealed = isReviewSealed
   const sealedMinsLeft = sealMinsLeft
+
+  async function handleDeleteRestaurant() {
+    if (!confirm(`Delete "${restaurant?.name}"? This cannot be undone.`)) return
+    await db.deleteRestaurant(id!)
+    refresh()
+    navigate('/restaurants')
+  }
 
   async function handleDeleteVisit(visitId: string) {
     if (!confirm('Delete this visit and its reviews?')) return
@@ -82,6 +90,7 @@ export default function RestaurantDetail() {
           <div className="flex flex-col gap-2 items-end">
             {visits.some(v => v.reviews?.some(r => r.is_pick && r.reviewer === 'sam')) && <span className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">⭐ Sam's Pick</span>}
             {visits.some(v => v.reviews?.some(r => r.is_pick && r.reviewer === 'olivia')) && <span className="bg-pink-100 text-pink-700 text-xs px-3 py-1 rounded-full font-medium">⭐ Olivia's Pick</span>}
+            <button onClick={handleDeleteRestaurant} className="text-stone-300 hover:text-red-400 transition-colors mt-1" title="Delete restaurant"><Trash2 size={16} /></button>
             {disagreement && <span className="bg-orange-100 text-orange-700 text-xs px-3 py-1 rounded-full font-medium">🤔 Divided Opinion</span>}
           </div>
         </div>
