@@ -8,6 +8,7 @@ import AddVisit from './pages/AddVisit'
 import MapView from './pages/MapView'
 import Wishlist from './pages/Wishlist'
 import Wrapped from './pages/Wrapped'
+import ForYou from './pages/ForYou'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="/map" element={<MapView />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/wrapped" element={<Wrapped />} />
+            <Route path="/foryou" element={<ForYou />} />
           </Routes>
         </main>
       </div>

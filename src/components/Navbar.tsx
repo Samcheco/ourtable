@@ -1,13 +1,15 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutGrid, UtensilsCrossed, Map, Heart, Sparkles, Plus } from 'lucide-react'
+import { LayoutGrid, UtensilsCrossed, Map, Heart, Sparkles, Plus, Wand2 } from 'lucide-react'
 
 const tabs = [
   { to: '/',            label: 'Home',      icon: LayoutGrid },
   { to: '/restaurants', label: 'Eats',      icon: UtensilsCrossed },
-  { to: '/map',         label: 'Map',       icon: Map },
+  { to: '/foryou',      label: 'For You',   icon: Wand2 },
   { to: '/wishlist',    label: 'Wishlist',  icon: Heart },
-  { to: '/wrapped',     label: 'Wrapped',   icon: Sparkles },
+  { to: '/map',         label: 'Map',       icon: Map },
 ]
+
+const desktopTabs = [...tabs, { to: '/wrapped', label: 'Wrapped', icon: Sparkles }]
 
 export default function Navbar() {
   const { pathname } = useLocation()
@@ -23,7 +25,7 @@ export default function Navbar() {
             <span className="font-['Playfair_Display'] font-bold text-xl text-amber-900">OurTable</span>
           </Link>
           <div className="flex items-center gap-1">
-            {tabs.map(({ to, label, icon: Icon }) => (
+            {desktopTabs.map(({ to, label, icon: Icon }) => (
               <Link key={to} to={to}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   pathname === to ? 'bg-amber-100 text-amber-800' : 'text-stone-600 hover:bg-amber-50 hover:text-amber-800'
