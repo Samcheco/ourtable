@@ -15,7 +15,8 @@ export default function App() {
       <DataProvider>
       <div className="min-h-screen bg-[#fdf8f3]">
         <Navbar />
-        <main>
+        <main className="pb-4">
+
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/restaurants" element={<Restaurants />} />

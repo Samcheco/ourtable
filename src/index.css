@@ -67,6 +67,26 @@ gmp-placeautocomplete::part(input):focus {
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
 }
 
+/* Mobile safe area (iPhone notch / home bar) */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Prevent text scaling on iOS */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Better tap highlight */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling on iOS */
+main, .overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #fdf8f3; }
