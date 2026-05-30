@@ -87,7 +87,7 @@ export default function RestaurantDetail() {
         </div>
 
         {allReviews.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-amber-50">
+          <div className="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-amber-50 min-w-0">
             {([
               { name: 'Sam', emoji: '👨🏻‍🍳', reviews: samReviews, reviewer: 'sam' as const },
               { name: 'Olivia', emoji: '👩🏾‍🍳', reviews: oliviaReviews, reviewer: 'olivia' as const },
@@ -97,27 +97,27 @@ export default function RestaurantDetail() {
               const sealedTop = isSealed(latestReview, allReviews)
               const minsLeftTop = sealedMinsLeft(latestReview)
               if (sealedTop) return (
-                <div key={name} className="flex flex-col items-center justify-center bg-stone-100 rounded-xl p-4 text-center border-2 border-dashed border-stone-200">
+                <div key={name} className="flex flex-col items-center justify-center bg-stone-100 rounded-xl p-4 text-center border-2 border-dashed border-stone-200 min-w-0">
                   <span className="text-xl mb-1">🔒</span>
                   <span className="text-sm font-medium text-stone-500">{emoji} {name}</span>
                   <span className="text-xs text-stone-400 mt-1">Sealed · {minsLeftTop}m left</span>
                 </div>
               )
               return (
-                <div key={name}>
-                  <div className="flex items-center gap-2 mb-2">
+                <div key={name} className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1 mb-2">
                     <span>{emoji}</span><span className="font-semibold text-stone-700">{name}</span>
-                    <StarRating value={Math.round(parseFloat(avg(reviews)))} readonly size={14} />
+                    <StarRating value={parseFloat(avg(reviews))} readonly size={13} />
                     <span className="text-stone-500 text-sm">{avg(reviews)}</span>
                   </div>
                   <div className="space-y-1 text-xs text-stone-400">
                     {(['food_rating', 'service_rating', 'ambiance_rating', 'value_rating'] as const).map(field => (
-                      <div key={field} className="flex items-center gap-2">
-                        <span className="w-16 capitalize">{field.replace('_rating', '')}</span>
-                        <div className="flex-1 bg-amber-50 rounded-full h-1.5">
+                      <div key={field} className="flex items-center gap-1.5">
+                        <span className="w-14 capitalize shrink-0">{field.replace('_rating', '')}</span>
+                        <div className="flex-1 bg-amber-50 rounded-full h-1.5 min-w-0">
                           <div className="bg-amber-400 h-1.5 rounded-full" style={{ width: `${(parseFloat(avg(reviews, field)) / 5) * 100}%` }} />
                         </div>
-                        <span className="w-6 text-right">{avg(reviews, field)}</span>
+                        <span className="w-5 text-right shrink-0">{avg(reviews, field)}</span>
                       </div>
                     ))}
                   </div>

@@ -45,6 +45,10 @@ h1, h2, h3, h4, h5 {
   gap: 2px;
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Photo upload drag area */
 .drag-active {
   border-color: #d97706;

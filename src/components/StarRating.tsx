@@ -1,3 +1,5 @@
+import { useId } from 'react'
+
 interface Props {
   value: number
   onChange?: (v: number) => void
@@ -6,6 +8,8 @@ interface Props {
 }
 
 export default function StarRating({ value, onChange, size = 20, readonly = false }: Props) {
+  const uid = useId()
+
   function handleClick(e: React.MouseEvent<HTMLButtonElement>, star: number) {
     if (readonly || !onChange) return
     const rect = e.currentTarget.getBoundingClientRect()
@@ -18,6 +22,7 @@ export default function StarRating({ value, onChange, size = 20, readonly = fals
       {[1, 2, 3, 4, 5].map(star => {
         const full = value >= star
         const half = !full && value >= star - 0.5
+        const clipId = `half-${uid}-${star}`
 
         return (
           <button
@@ -36,7 +41,7 @@ export default function StarRating({ value, onChange, size = 20, readonly = fals
               xmlns="http://www.w3.org/2000/svg"
             >
               <defs>
-                <clipPath id={`half-${star}`}>
+                <clipPath id={clipId}>
                   <rect x="0" y="0" width="12" height="24" />
                 </clipPath>
               </defs>
@@ -51,7 +56,6 @@ export default function StarRating({ value, onChange, size = 20, readonly = fals
                 strokeLinejoin="round"
               />
 
-              {/* Full fill */}
               {full && (
                 <polygon
                   points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
@@ -63,7 +67,6 @@ export default function StarRating({ value, onChange, size = 20, readonly = fals
                 />
               )}
 
-              {/* Half fill */}
               {half && (
                 <polygon
                   points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
@@ -72,7 +75,7 @@ export default function StarRating({ value, onChange, size = 20, readonly = fals
                   strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  clipPath={`url(#half-${star})`}
+                  clipPath={`url(#${clipId})`}
                 />
               )}
             </svg>

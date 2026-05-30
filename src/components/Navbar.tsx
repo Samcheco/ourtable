@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutGrid, UtensilsCrossed, Map, Heart, Sparkles, Plus, Wand2 } from 'lucide-react'
+import { useState } from 'react'
+import { LayoutGrid, UtensilsCrossed, Map, Heart, Sparkles, Plus, Wand2, RefreshCw } from 'lucide-react'
 
 const tabs = [
   { to: '/',            label: 'Home',      icon: LayoutGrid },
@@ -11,9 +12,21 @@ const tabs = [
 
 const desktopTabs = [...tabs, { to: '/wrapped', label: 'Wrapped', icon: Sparkles }]
 
-export default function Navbar() {
+interface NavbarProps {
+  onRefresh?: () => Promise<void>
+}
+
+export default function Navbar({ onRefresh }: NavbarProps) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const [refreshing, setRefreshing] = useState(false)
+
+  async function handleRefresh() {
+    if (!onRefresh || refreshing) return
+    setRefreshing(true)
+    await onRefresh()
+    setRefreshing(false)
+  }
 
   return (
     <>
@@ -47,13 +60,25 @@ export default function Navbar() {
             <span className="text-xl">🍽️</span>
             <span className="font-['Playfair_Display'] font-bold text-lg text-amber-900">OurTable</span>
           </Link>
-          <button
-            onClick={() => navigate('/add')}
-            className="bg-amber-600 text-white rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform"
-            style={{ width: 40, height: 40 }}
-          >
-            <Plus size={22} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRefresh}
+              className="text-stone-400 active:text-amber-600 transition-colors p-1"
+              aria-label="Refresh"
+            >
+              <RefreshCw
+                size={18}
+                style={{ animation: refreshing ? 'spin 0.8s linear infinite' : 'none' }}
+              />
+            </button>
+            <button
+              onClick={() => navigate('/add')}
+              className="bg-amber-600 text-white rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform"
+              style={{ width: 40, height: 40 }}
+            >
+              <Plus size={22} />
+            </button>
+          </div>
         </div>
       </header>
 

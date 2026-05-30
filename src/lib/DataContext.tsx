@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
 import type { Restaurant, Visit, Photo, WishlistItem } from '../types'
 import * as db from './db'
+import { supabase, isSupabaseConfigured } from './supabase'
 
 interface DataState {
   restaurants: Restaurant[]
@@ -39,6 +40,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return
+    const channel = supabase
+      .channel('ourtable-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurants' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'visits' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'photos' }, () => load())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [load])
 
   return (
     <DataCtx.Provider value={{ restaurants, visits, photos, wishlist, loading, refresh: load }}>

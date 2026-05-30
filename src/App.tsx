@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { DataProvider } from './lib/DataContext'
+import { useData } from './lib/DataContext'
 import Navbar from './components/Navbar'
+import PullToRefresh from './components/PullToRefresh'
 import Home from './pages/Home'
 import Restaurants from './pages/Restaurants'
 import RestaurantDetail from './pages/RestaurantDetail'
@@ -10,15 +12,13 @@ import Wishlist from './pages/Wishlist'
 import Wrapped from './pages/Wrapped'
 import ForYou from './pages/ForYou'
 
-export default function App() {
+function AppShell() {
+  const { refresh } = useData()
   return (
-    <BrowserRouter>
-      <DataProvider>
-      <div className="min-h-screen bg-[#fdf8f3]">
-        <Navbar />
-        {/* pb-24 on mobile = 96px clears the 64px tab bar + breathing room */}
+    <div className="min-h-screen bg-[#fdf8f3]">
+      <Navbar onRefresh={refresh} />
+      <PullToRefresh onRefresh={refresh}>
         <main className="pb-6 sm:pb-6" style={{ paddingBottom: 'max(24px, calc(env(safe-area-inset-bottom) + 80px))' }}>
-
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/restaurants" element={<Restaurants />} />
@@ -30,7 +30,16 @@ export default function App() {
             <Route path="/foryou" element={<ForYou />} />
           </Routes>
         </main>
-      </div>
+      </PullToRefresh>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <DataProvider>
+        <AppShell />
       </DataProvider>
     </BrowserRouter>
   )

@@ -61,7 +61,7 @@ export default function RestaurantCard({ restaurant, reviews, photos, visitCount
           </div>
           {consensus !== null && (
             <div className="mt-3 flex items-center justify-between">
-              <StarRating value={Math.round(consensus)} readonly size={16} />
+              <StarRating value={consensus} readonly size={16} />
               <span className="text-xs text-stone-400 flex items-center gap-1">
                 <Camera size={11} /> {photos.length}
                 <span className="ml-1">· {visitCount} visit{visitCount !== 1 ? 's' : ''}</span>
@@ -69,9 +69,19 @@ export default function RestaurantCard({ restaurant, reviews, photos, visitCount
             </div>
           )}
           {(samAvg !== null || oliviaAvg !== null) && (
-            <div className="mt-2 flex gap-3 text-xs text-stone-500">
-              {samAvg !== null && <span>Sam: {'⭐'.repeat(Math.round(samAvg))}</span>}
-              {oliviaAvg !== null && <span>Olivia: {'⭐'.repeat(Math.round(oliviaAvg))}</span>}
+            <div className="mt-2 flex gap-3 items-center">
+              {samAvg !== null && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-stone-400">Sam</span>
+                  <StarRating value={samAvg} readonly size={12} />
+                </div>
+              )}
+              {oliviaAvg !== null && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-stone-400">Olivia</span>
+                  <StarRating value={oliviaAvg} readonly size={12} />
+                </div>
+              )}
             </div>
           )}
         </div>
