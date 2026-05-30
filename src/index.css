@@ -21,11 +21,22 @@ h1, h2, h3, h4, h5 {
   font-family: var(--font-heading);
 }
 
-/* Leaflet map */
+/* Leaflet map — keep below our navbars */
 .leaflet-container {
   width: 100%;
   height: 100%;
   border-radius: 12px;
+}
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-map-pane {
+  z-index: 1 !important;
+}
+.leaflet-control-container {
+  z-index: 2 !important;
 }
 
 /* Star rating */

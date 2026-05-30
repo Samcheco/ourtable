@@ -31,8 +31,11 @@ export default function MapView() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 pt-4 pb-8">
-      <h1 className="font-['Playfair_Display'] text-3xl font-bold text-stone-800 mb-6">Map</h1>
-      <div className="rounded-2xl overflow-hidden shadow-sm border border-amber-50" style={{ height: '600px' }}>
+      <h1 className="font-['Playfair_Display'] text-3xl font-bold text-stone-800 mb-4">Map</h1>
+      {/* Height fits the visible area between the two navbars on mobile */}
+      <div className="rounded-2xl overflow-hidden shadow-sm border border-amber-50 relative z-0"
+        style={{ height: 'calc(100dvh - 56px - 64px - 60px)' }}>
+        {/* 56px = mobile top header, 64px = bottom tab bar, 60px = page title + padding */}
         <MapContainer center={center} zoom={enriched.length ? 13 : 12} style={{ height: '100%', width: '100%' }}>
           <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {enriched.map(r => (
