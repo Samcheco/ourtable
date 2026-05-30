@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { computeWrapped } from '../lib/wrapped'
-import { getVisits } from '../lib/storage'
+import { useData } from '../lib/DataContext'
 import { Link } from 'react-router-dom'
 import StarRating from '../components/StarRating'
 
@@ -31,7 +31,14 @@ function daysUntilUnlock(): number {
 }
 
 export default function Wrapped() {
-  const allVisits = useMemo(() => getVisits(), [])
+  const { visits, restaurants, photos } = useData()
+  const years = useMemo(() => {
+    const ys = new Set(visits.map(v => new Date(v.date).getFullYear()))
+    return Array.from(ys).sort((a, b) => b - a)
+  }, [visits])
+  const currentYear = new Date().getFullYear()
+  const [year, setYear] = useState(years[0] || currentYear)
+  const stats = useMemo(() => computeWrapped(year, visits, restaurants, photos), [year, visits, restaurants, photos])
 
   if (!isWrappedUnlocked()) {
     const days = daysUntilUnlock()
@@ -40,10 +47,7 @@ export default function Wrapped() {
         <div className="wrapped-gradient rounded-3xl p-10 text-white">
           <div className="text-6xl mb-4">🔒</div>
           <h1 className="font-['Playfair_Display'] text-3xl font-bold mb-3">Wrapped is locked</h1>
-          <p className="text-white/80 text-lg mb-6">
-            Your year in food unlocks on<br />
-            <span className="font-bold text-white">December 14th</span>
-          </p>
+          <p className="text-white/80 text-lg mb-6">Your year in food unlocks on<br /><span className="font-bold text-white">December 14th</span></p>
           <div className="bg-white/20 rounded-2xl px-6 py-4 inline-block">
             <div className="text-4xl font-bold">{days}</div>
             <div className="text-white/80 text-sm mt-1">day{days !== 1 ? 's' : ''} to go</div>
@@ -53,14 +57,6 @@ export default function Wrapped() {
       </div>
     )
   }
-  const years = useMemo(() => {
-    const ys = new Set(allVisits.map(v => new Date(v.date).getFullYear()))
-    return Array.from(ys).sort((a, b) => b - a)
-  }, [allVisits])
-
-  const currentYear = new Date().getFullYear()
-  const [year, setYear] = useState(years[0] || currentYear)
-  const stats = useMemo(() => computeWrapped(year), [year])
 
   if (stats.totalVisits === 0) {
     return (

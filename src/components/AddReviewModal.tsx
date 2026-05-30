@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { Reviewer, Review } from '../types'
-import { saveReview } from '../lib/storage'
+import { saveReview } from '../lib/db'
 import StarRating from './StarRating'
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
   reviewer: Reviewer
   existing?: Review
   onClose: () => void
-  onSaved: () => void
+  onSaved: () => void | Promise<void>
 }
 
 const SENTIMENTS = [
@@ -30,9 +30,9 @@ export default function AddReviewModal({ visitId, reviewer, existing, onClose, o
   const [sentiment, setSentiment] = useState<typeof SENTIMENTS[number]['v']>(existing?.would_return ?? 'liked')
   const [isPick, setIsPick] = useState(existing?.is_pick ?? false)
 
-  function handleSave() {
+  async function handleSave() {
     if (overall === 0) { alert('Please add an overall star rating.'); return }
-    saveReview({
+    await saveReview({
       visit_id: visitId,
       reviewer,
       overall_rating: overall,

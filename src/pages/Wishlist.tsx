@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { Search, Plus, Trash2, Shuffle, MapPin } from 'lucide-react'
-import { getWishlist, saveWishlistItem, deleteWishlistItem } from '../lib/storage'
+import { useData } from '../lib/DataContext'
+import * as db from '../lib/db'
 import { searchRestaurants, formatAddress } from '../lib/nominatim'
 import type { NominatimResult, Reviewer } from '../types'
 import PriceTag from '../components/PriceTag'
@@ -8,11 +9,10 @@ import PriceTag from '../components/PriceTag'
 const CUISINES = ['Italian', 'Japanese', 'Mexican', 'American', 'Chinese', 'Indian', 'Thai', 'French', 'Mediterranean', 'Korean', 'Other']
 
 export default function Wishlist() {
-  const [wishlist, setWishlist] = useState(() => getWishlist())
+  const { wishlist, refresh } = useData()
   const [showForm, setShowForm] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<NominatimResult[]>([])
-  const [_searching, setSearching] = useState(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>(null!)
   const [name, setName] = useState('')
   const [address, setAddress] = useState('')
@@ -28,10 +28,8 @@ export default function Wishlist() {
     clearTimeout(searchTimeout.current)
     if (!q.trim()) { setResults([]); return }
     searchTimeout.current = setTimeout(async () => {
-      setSearching(true)
       const res = await searchRestaurants(q)
       setResults(res)
-      setSearching(false)
     }, 400)
   }
 
@@ -42,23 +40,23 @@ export default function Wishlist() {
     setQuery('')
   }
 
-  function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
-    saveWishlistItem({ name, address, cuisine, price_range: priceRange as 1|2|3|4, notes, added_by: addedBy })
-    setWishlist(getWishlist())
+    await db.saveWishlistItem({ name, address, cuisine, price_range: priceRange as 1|2|3|4, notes, added_by: addedBy })
+    await refresh()
     setName(''); setAddress(''); setNotes(''); setShowForm(false)
   }
 
-  function handleDelete(id: string) {
-    deleteWishlistItem(id)
-    setWishlist(getWishlist())
+  async function handleDelete(id: string) {
+    await db.deleteWishlistItem(id)
+    await refresh()
   }
 
   function pickRandom() {
-    const filtered = wishlist.filter(w => filterBy === 'all' || w.added_by === filterBy)
-    if (!filtered.length) return
-    const pick = filtered[Math.floor(Math.random() * filtered.length)]
+    const list = wishlist.filter(w => filterBy === 'all' || w.added_by === filterBy)
+    if (!list.length) return
+    const pick = list[Math.floor(Math.random() * list.length)]
     setHighlighted(pick.id)
     setTimeout(() => setHighlighted(null), 3000)
   }
@@ -79,7 +77,6 @@ export default function Wishlist() {
         </div>
       </div>
 
-      {/* Filter tabs */}
       <div className="flex gap-2 mb-5">
         {(['all', 'sam', 'olivia'] as const).map(f => (
           <button key={f} onClick={() => setFilterBy(f)}
@@ -89,7 +86,6 @@ export default function Wishlist() {
         ))}
       </div>
 
-      {/* Add form */}
       {showForm && (
         <form onSubmit={handleAdd} className="bg-white rounded-2xl p-5 border border-amber-100 shadow-sm mb-6 space-y-3">
           <h2 className="font-semibold text-stone-700">Add a place</h2>
@@ -109,43 +105,27 @@ export default function Wishlist() {
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-stone-500 block mb-1">Name *</label>
-              <input value={name} onChange={e => setName(e.target.value)} required className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-            </div>
-            <div>
-              <label className="text-xs text-stone-500 block mb-1">Address</label>
-              <input value={address} onChange={e => setAddress(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-            </div>
-            <div>
-              <label className="text-xs text-stone-500 block mb-1">Cuisine</label>
+            <div><label className="text-xs text-stone-500 block mb-1">Name *</label>
+              <input value={name} onChange={e => setName(e.target.value)} required className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" /></div>
+            <div><label className="text-xs text-stone-500 block mb-1">Address</label>
+              <input value={address} onChange={e => setAddress(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" /></div>
+            <div><label className="text-xs text-stone-500 block mb-1">Cuisine</label>
               <select value={cuisine} onChange={e => setCuisine(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
                 {CUISINES.map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-stone-500 block mb-1">Price</label>
-              <div className="flex gap-1">
-                {[1,2,3,4].map(p => (
-                  <button key={p} type="button" onClick={() => setPriceRange(p)} className={`flex-1 py-2 rounded-lg border text-sm ${priceRange === p ? 'bg-amber-600 border-amber-600 text-white' : 'border-stone-200 text-stone-600'}`}>{'$'.repeat(p)}</button>
-                ))}
-              </div>
-            </div>
-            <div className="col-span-2">
-              <label className="text-xs text-stone-500 block mb-1">Notes</label>
+              </select></div>
+            <div><label className="text-xs text-stone-500 block mb-1">Price</label>
+              <div className="flex gap-1">{[1,2,3,4].map(p => (
+                <button key={p} type="button" onClick={() => setPriceRange(p)} className={`flex-1 py-2 rounded-lg border text-sm ${priceRange === p ? 'bg-amber-600 border-amber-600 text-white' : 'border-stone-200 text-stone-600'}`}>{'$'.repeat(p)}</button>
+              ))}</div></div>
+            <div className="col-span-2"><label className="text-xs text-stone-500 block mb-1">Notes</label>
               <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Why you want to try it..."
-                className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
-            </div>
-            <div>
-              <label className="text-xs text-stone-500 block mb-1">Added by</label>
-              <div className="flex gap-2">
-                {(['sam', 'olivia'] as Reviewer[]).map(r => (
-                  <button key={r} type="button" onClick={() => setAddedBy(r)} className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${addedBy === r ? 'bg-amber-600 text-white' : 'bg-amber-50 text-stone-600'}`}>
-                    {r === 'sam' ? '👨🏻‍🍳 Sam' : '👩🏾‍🍳 Olivia'}
-                  </button>
-                ))}
-              </div>
-            </div>
+                className="w-full px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" /></div>
+            <div><label className="text-xs text-stone-500 block mb-1">Added by</label>
+              <div className="flex gap-2">{(['sam', 'olivia'] as Reviewer[]).map(r => (
+                <button key={r} type="button" onClick={() => setAddedBy(r)} className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${addedBy === r ? 'bg-amber-600 text-white' : 'bg-amber-50 text-stone-600'}`}>
+                  {r === 'sam' ? '👨🏻‍🍳 Sam' : '👩🏾‍🍳 Olivia'}
+                </button>
+              ))}</div></div>
           </div>
           <div className="flex gap-2 pt-1">
             <button type="submit" className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">Add to list</button>
@@ -155,10 +135,7 @@ export default function Wishlist() {
       )}
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-stone-400">
-          <div className="text-5xl mb-4">🌟</div>
-          <p>Nothing on the list yet! Add places you want to try.</p>
-        </div>
+        <div className="text-center py-20 text-stone-400"><div className="text-5xl mb-4">🌟</div><p>Nothing on the list yet!</p></div>
       ) : (
         <div className="space-y-3">
           {filtered.map(item => (
@@ -179,9 +156,7 @@ export default function Wishlist() {
                   </div>
                   {item.notes && <p className="text-stone-500 text-sm mt-1 italic">"{item.notes}"</p>}
                 </div>
-                <button onClick={() => handleDelete(item.id)} className="text-stone-300 hover:text-red-400 transition-colors shrink-0">
-                  <Trash2 size={15} />
-                </button>
+                <button onClick={() => handleDelete(item.id)} className="text-stone-300 hover:text-red-400 transition-colors shrink-0"><Trash2 size={15} /></button>
               </div>
             </div>
           ))}

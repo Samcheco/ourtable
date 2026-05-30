@@ -1,13 +1,12 @@
 import { getMonth } from 'date-fns'
-import type { WrappedStats, Restaurant } from '../types'
-import { getAllVisitsWithDetails, getRestaurants, getPhotos } from './storage'
+import type { WrappedStats, Restaurant, Visit, Photo } from '../types'
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-export function computeWrapped(year: number): WrappedStats {
-  const allVisits = getAllVisitsWithDetails().filter(v => new Date(v.date).getFullYear() === year)
-  const restaurants = getRestaurants()
-  const allPhotos = getPhotos()
+export function computeWrapped(year: number, allVisitsRaw: Visit[], restaurantsRaw: Restaurant[], allPhotosRaw: Photo[]): WrappedStats {
+  const allVisits = allVisitsRaw.filter(v => new Date(v.date).getFullYear() === year)
+  const restaurants = restaurantsRaw
+  const allPhotos = allPhotosRaw
 
   const visitedRestaurantIds = new Set(allVisits.map(v => v.restaurant_id))
   const photos = allPhotos.filter(p => allVisits.some(v => v.id === p.visit_id))

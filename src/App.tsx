@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { DataProvider } from './lib/DataContext'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Restaurants from './pages/Restaurants'
@@ -11,6 +12,7 @@ import Wrapped from './pages/Wrapped'
 export default function App() {
   return (
     <BrowserRouter>
+      <DataProvider>
       <div className="min-h-screen bg-[#fdf8f3]">
         <Navbar />
         <main>
@@ -25,6 +27,7 @@ export default function App() {
           </Routes>
         </main>
       </div>
+      </DataProvider>
     </BrowserRouter>
   )
 }

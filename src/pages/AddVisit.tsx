@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { X, Upload, MapPin, AlertCircle } from 'lucide-react'
 import { loadGoogleMaps, attachAutocomplete, isGoogleConfigured } from '../lib/googlePlaces'
 import type { PlaceResult } from '../lib/googlePlaces'
-import { saveRestaurant, getRestaurant, saveVisit, saveReview, savePhoto } from '../lib/storage'
+import * as db from '../lib/db'
+import { useData } from '../lib/DataContext'
 import type { Reviewer } from '../types'
 import StarRating from '../components/StarRating'
 import { useDropzone } from 'react-dropzone'
@@ -44,7 +45,8 @@ export default function AddVisit() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const existingRestaurantId = searchParams.get('restaurant')
-  const existingRestaurant = existingRestaurantId ? getRestaurant(existingRestaurantId) : null
+  const { restaurants } = useData()
+  const existingRestaurant = existingRestaurantId ? restaurants.find(r => r.id === existingRestaurantId) : null
 
   const autocompleteRef = useRef<HTMLInputElement>(null)
   const [googleLoaded, setGoogleLoaded] = useState(false)
@@ -111,7 +113,7 @@ export default function AddVisit() {
 
     let restaurantId = existingRestaurant?.id
     if (!restaurantId) {
-      const saved = saveRestaurant({
+      const saved = await db.saveRestaurant({
         name,
         address: selectedPlace?.address || '',
         lat: selectedPlace?.lat || 0,
@@ -122,14 +124,14 @@ export default function AddVisit() {
       restaurantId = saved.id
     }
 
-    const visit = saveVisit({ restaurant_id: restaurantId, date, occasion, notes: '', reviews: [], photos: [] })
+    const visit = await db.saveVisit({ restaurant_id: restaurantId, date, occasion, notes: '' })
 
-    if (samReview.overall_rating > 0) saveReview({ ...samReview, visit_id: visit.id, reviewer: 'sam' })
-    if (oliviaReview.overall_rating > 0) saveReview({ ...oliviaReview, visit_id: visit.id, reviewer: 'olivia' })
+    if (samReview.overall_rating > 0) await db.saveReview({ ...samReview, visit_id: visit.id, reviewer: 'sam' })
+    if (oliviaReview.overall_rating > 0) await db.saveReview({ ...oliviaReview, visit_id: visit.id, reviewer: 'olivia' })
 
-    photos.forEach(p => {
-      savePhoto({ visit_id: visit.id, url: p.url, caption: p.caption, is_best_dish: p.is_best_dish, uploaded_by: p.uploaded_by })
-    })
+    await Promise.all(photos.map(p =>
+      db.savePhoto({ visit_id: visit.id, url: p.url, caption: p.caption, is_best_dish: p.is_best_dish, uploaded_by: p.uploaded_by })
+    ))
 
     navigate(`/restaurants/${restaurantId}`)
   }
