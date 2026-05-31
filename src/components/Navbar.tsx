@@ -8,9 +8,10 @@ const tabs = [
   { to: '/foryou',      label: 'For You',   icon: Wand2 },
   { to: '/wishlist',    label: 'Wishlist',  icon: Heart },
   { to: '/map',         label: 'Map',       icon: Map },
+  { to: '/wrapped',     label: 'Wrapped',   icon: Sparkles },
 ]
 
-const desktopTabs = [...tabs, { to: '/wrapped', label: 'Wrapped', icon: Sparkles }]
+const desktopTabs = tabs
 
 interface NavbarProps {
   onRefresh?: () => Promise<void>
