@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, useCallback, type ReactNode } from 'react'
 import type { Restaurant, Visit, Photo, WishlistItem } from '../types'
 import * as db from './db'
 import { supabase, isSupabaseConfigured } from './supabase'
@@ -41,17 +41,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { load() }, [load])
 
+  const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedLoad = useCallback(() => {
+    if (reloadTimer.current) clearTimeout(reloadTimer.current)
+    reloadTimer.current = setTimeout(() => load(), 800)
+  }, [load])
+
   useEffect(() => {
     if (!isSupabaseConfigured()) return
     const channel = supabase
       .channel('ourtable-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurants' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'visits' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'photos' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurants' }, debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'visits' }, debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, debouncedLoad)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'photos' }, debouncedLoad)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [load])
+  }, [debouncedLoad])
 
   return (
     <DataCtx.Provider value={{ restaurants, visits, photos, wishlist, loading, refresh: load }}>

@@ -62,6 +62,7 @@ export default function AddVisit() {
   const [oliviaReview, setOliviaReview] = useState<ReviewForm>(emptyReview())
   const [activeReviewer, setActiveReviewer] = useState<Reviewer>('sam')
   const [photos, setPhotos] = useState<PhotoEntry[]>([])
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!isGoogleConfigured()) return
@@ -108,32 +109,38 @@ export default function AddVisit() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (submitting) return
     const name = existingRestaurant?.name || selectedPlace?.name || manualName
     if (!name) { alert('Please search for or enter a restaurant name.'); return }
 
-    let restaurantId = existingRestaurant?.id
-    if (!restaurantId) {
-      const saved = await db.saveRestaurant({
-        name,
-        address: selectedPlace?.address || '',
-        lat: selectedPlace?.lat || 0,
-        lng: selectedPlace?.lng || 0,
-        cuisine,
-        price_range: priceRange as 1 | 2 | 3 | 4,
-      })
-      restaurantId = saved.id
+    setSubmitting(true)
+    try {
+      let restaurantId = existingRestaurant?.id
+      if (!restaurantId) {
+        const saved = await db.saveRestaurant({
+          name,
+          address: selectedPlace?.address || '',
+          lat: selectedPlace?.lat || 0,
+          lng: selectedPlace?.lng || 0,
+          cuisine,
+          price_range: priceRange as 1 | 2 | 3 | 4,
+        })
+        restaurantId = saved.id
+      }
+
+      const visit = await db.saveVisit({ restaurant_id: restaurantId, date, occasion, notes: '' })
+
+      if (samReview.overall_rating > 0) await db.saveReview({ ...samReview, visit_id: visit.id, reviewer: 'sam' })
+      if (oliviaReview.overall_rating > 0) await db.saveReview({ ...oliviaReview, visit_id: visit.id, reviewer: 'olivia' })
+
+      await Promise.all(photos.map(p =>
+        db.savePhoto({ visit_id: visit.id, url: p.url, caption: p.caption, is_best_dish: p.is_best_dish, uploaded_by: p.uploaded_by })
+      ))
+
+      navigate(`/restaurants/${restaurantId}`)
+    } finally {
+      setSubmitting(false)
     }
-
-    const visit = await db.saveVisit({ restaurant_id: restaurantId, date, occasion, notes: '' })
-
-    if (samReview.overall_rating > 0) await db.saveReview({ ...samReview, visit_id: visit.id, reviewer: 'sam' })
-    if (oliviaReview.overall_rating > 0) await db.saveReview({ ...oliviaReview, visit_id: visit.id, reviewer: 'olivia' })
-
-    await Promise.all(photos.map(p =>
-      db.savePhoto({ visit_id: visit.id, url: p.url, caption: p.caption, is_best_dish: p.is_best_dish, uploaded_by: p.uploaded_by })
-    ))
-
-    navigate(`/restaurants/${restaurantId}`)
   }
 
   return (
@@ -328,9 +335,9 @@ export default function AddVisit() {
           )}
         </div>
 
-        <button type="submit"
-          className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3.5 rounded-2xl font-semibold text-lg transition-colors shadow-sm">
-          Save Visit
+        <button type="submit" disabled={submitting}
+          className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-60 disabled:cursor-not-allowed text-white py-3.5 rounded-2xl font-semibold text-lg transition-colors shadow-sm">
+          {submitting ? 'Saving…' : 'Save Visit'}
         </button>
       </form>
     </div>
