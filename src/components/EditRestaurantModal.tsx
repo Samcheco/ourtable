@@ -5,8 +5,18 @@ import * as db from '../lib/db'
 import { loadGoogleMaps, attachAutocomplete, isGoogleConfigured } from '../lib/googlePlaces'
 
 const CUISINES = [
-  'American', 'Chinese', 'French', 'Indian', 'Italian',
-  'Japanese', 'Korean', 'Mediterranean', 'Mexican', 'Thai', 'Other',
+  'Afghan', 'African', 'American', 'Argentinian', 'Armenian',
+  'Brazilian', 'British', 'Burmese', 'Cajun', 'Caribbean',
+  'Chinese', 'Colombian', 'Cuban', 'Ethiopian', 'Filipino',
+  'French', 'Fusion', 'Georgian', 'German', 'Greek',
+  'Hawaiian', 'Indian', 'Indonesian', 'Iranian/Persian', 'Irish',
+  'Israeli', 'Italian', 'Jamaican', 'Japanese', 'Korean',
+  'Latin American', 'Lebanese', 'Malaysian', 'Mediterranean', 'Mexican',
+  'Middle Eastern', 'Moroccan', 'Nepalese', 'Pakistani', 'Peruvian',
+  'Pizza', 'Portuguese', 'Russian', 'Seafood', 'Southern/Soul Food',
+  'Spanish', 'Sri Lankan', 'Steakhouse', 'Sushi', 'Swedish',
+  'Taiwanese', 'Tex-Mex', 'Thai', 'Turkish', 'Ukrainian',
+  'Vegan', 'Vegetarian', 'Vietnamese', 'Other',
 ]
 
 interface Props {

@@ -11,10 +11,27 @@ import { useDropzone } from 'react-dropzone'
 
 
 const CUISINES = [
-  'American', 'Chinese', 'French', 'Indian', 'Italian',
-  'Japanese', 'Korean', 'Mediterranean', 'Mexican', 'Thai', 'Other',
+  'Afghan', 'African', 'American', 'Argentinian', 'Armenian',
+  'Brazilian', 'British', 'Burmese', 'Cajun', 'Caribbean',
+  'Chinese', 'Colombian', 'Cuban', 'Ethiopian', 'Filipino',
+  'French', 'Fusion', 'Georgian', 'German', 'Greek',
+  'Hawaiian', 'Indian', 'Indonesian', 'Iranian/Persian', 'Irish',
+  'Israeli', 'Italian', 'Jamaican', 'Japanese', 'Korean',
+  'Latin American', 'Lebanese', 'Malaysian', 'Mediterranean', 'Mexican',
+  'Middle Eastern', 'Moroccan', 'Nepalese', 'Pakistani', 'Peruvian',
+  'Pizza', 'Portuguese', 'Russian', 'Seafood', 'Southern/Soul Food',
+  'Spanish', 'Sri Lankan', 'Steakhouse', 'Sushi', 'Swedish',
+  'Taiwanese', 'Tex-Mex', 'Thai', 'Turkish', 'Ukrainian',
+  'Vegan', 'Vegetarian', 'Vietnamese', 'Other',
 ]
-const OCCASIONS = ['Date Night', 'Casual Lunch', 'Birthday', 'Anniversary', 'Family Dinner', 'Weekend Brunch', 'Other']
+
+const OCCASIONS = [
+  'Anniversary', 'Birthday', 'Business Dinner', 'Casual Lunch',
+  'Celebration', 'Date Night', 'Family Dinner', 'Girls Night',
+  'Happy Hour', 'Holiday Meal', 'Late Night', 'Networking',
+  'Special Occasion', 'Sports Watch', 'Tasting Menu', 'Weekend Brunch',
+  'Other',
+]
 
 interface ReviewForm {
   overall_rating: number
@@ -57,6 +74,7 @@ export default function AddVisit() {
   const [priceRange, setPriceRange] = useState(2)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [occasion, setOccasion] = useState('Date Night')
+  const [customOccasion, setCustomOccasion] = useState('')
 
   const [samReview, setSamReview] = useState<ReviewForm>(emptyReview())
   const [oliviaReview, setOliviaReview] = useState<ReviewForm>(emptyReview())
@@ -128,7 +146,8 @@ export default function AddVisit() {
         restaurantId = saved.id
       }
 
-      const visit = await db.saveVisit({ restaurant_id: restaurantId, date, occasion, notes: '' })
+      const finalOccasion = occasion === 'Other' ? (customOccasion.trim() || 'Other') : occasion
+      const visit = await db.saveVisit({ restaurant_id: restaurantId, date, occasion: finalOccasion, notes: '' })
 
       if (samReview.overall_rating > 0) await db.saveReview({ ...samReview, visit_id: visit.id, reviewer: 'sam' })
       if (oliviaReview.overall_rating > 0) await db.saveReview({ ...oliviaReview, visit_id: visit.id, reviewer: 'olivia' })
@@ -235,6 +254,14 @@ export default function AddVisit() {
                   {OCCASIONS.map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
+              {occasion === 'Other' && (
+                <input
+                  value={customOccasion}
+                  onChange={e => setCustomOccasion(e.target.value)}
+                  placeholder="Describe the occasion…"
+                  className="mt-2 w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              )}
             </div>
           </div>
         </div>
