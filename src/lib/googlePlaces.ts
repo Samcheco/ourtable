@@ -83,7 +83,8 @@ export async function searchNearbyRestaurants(lat: number, lng: number): Promise
   const service = new g.maps.places.PlacesService(div)
 
   return new Promise((resolve) => {
-    const EXCLUDE_TYPES = new Set(['lodging', 'hotel', 'motel', 'spa', 'gym', 'store', 'supermarket', 'gas_station'])
+    const FOOD_TYPES = new Set(['restaurant', 'food', 'cafe', 'bakery', 'bar', 'meal_takeaway', 'meal_delivery'])
+    const EXCLUDE_TYPES = new Set(['lodging', 'hotel', 'motel', 'spa', 'gym', 'store', 'supermarket', 'gas_station', 'shopping_mall', 'department_store', 'clothing_store', 'movie_theater', 'night_club'])
 
     service.nearbySearch({
       location: { lat, lng },
@@ -97,6 +98,7 @@ export async function searchNearbyRestaurants(lat: number, lng: number): Promise
         .filter((p: any) =>
           p.rating >= 4.0 &&
           p.user_ratings_total >= 100 &&
+          p.types?.some((t: string) => FOOD_TYPES.has(t)) &&
           !p.types?.some((t: string) => EXCLUDE_TYPES.has(t))
         )
         .sort((a: any, b: any) => (b.user_ratings_total - a.user_ratings_total))
@@ -124,19 +126,16 @@ export async function reverseGeocodeCity(lat: number, lng: number): Promise<stri
   const geocoder = new g.maps.Geocoder()
   return new Promise((resolve) => {
     geocoder.geocode({ location: { lat, lng } }, (results: any[], status: string) => {
-      if (status !== 'OK' || !results?.length) { resolve('Unknown City'); return }
-      // Find the locality (city) component
-      for (const result of results) {
-        const locality = result.address_components?.find((c: any) =>
-          c.types.includes('locality')
-        )
-        if (locality) { resolve(locality.long_name); return }
+      if (status !== 'OK' || !results?.length) { resolve('Nearby'); return }
+      // Search all results for the best city-level component
+      const priority = ['locality', 'sublocality_level_1', 'sublocality', 'neighborhood', 'administrative_area_level_2']
+      for (const type of priority) {
+        for (const result of results) {
+          const match = result.address_components?.find((c: any) => c.types.includes(type))
+          if (match) { resolve(match.long_name); return }
+        }
       }
-      // Fallback to sublocality or neighborhood
-      const fallback = results[0]?.address_components?.find((c: any) =>
-        c.types.includes('sublocality') || c.types.includes('neighborhood')
-      )
-      resolve(fallback?.long_name || 'Unknown City')
+      resolve('Nearby')
     })
   })
 }
