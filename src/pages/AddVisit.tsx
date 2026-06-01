@@ -71,6 +71,7 @@ export default function AddVisit() {
   const [manualName, setManualName] = useState('')
 
   const [cuisine, setCuisine] = useState('Italian')
+  const [customCuisine, setCustomCuisine] = useState('')
   const [priceRange, setPriceRange] = useState(2)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [occasion, setOccasion] = useState('Date Night')
@@ -140,7 +141,7 @@ export default function AddVisit() {
           address: selectedPlace?.address || '',
           lat: selectedPlace?.lat || 0,
           lng: selectedPlace?.lng || 0,
-          cuisine,
+          cuisine: cuisine === 'Other' ? (customCuisine.trim() || 'Other') : cuisine,
           price_range: priceRange as 1 | 2 | 3 | 4,
         })
         restaurantId = saved.id
@@ -219,6 +220,14 @@ export default function AddVisit() {
                   className="w-full px-3 py-3 rounded-xl border border-stone-200 text-base focus:outline-none focus:ring-2 focus:ring-amber-400">
                   {CUISINES.map(c => <option key={c}>{c}</option>)}
                 </select>
+                {cuisine === 'Other' && (
+                  <input
+                    value={customCuisine}
+                    onChange={e => setCustomCuisine(e.target.value)}
+                    placeholder="Enter cuisine type…"
+                    className="mt-2 w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-xs text-stone-400 mb-1">Price Range</label>

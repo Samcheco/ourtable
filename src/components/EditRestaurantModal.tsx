@@ -30,7 +30,8 @@ export default function EditRestaurantModal({ restaurant, onClose, onSaved }: Pr
   const [address, setAddress] = useState(restaurant.address)
   const [lat, setLat] = useState(restaurant.lat)
   const [lng, setLng] = useState(restaurant.lng)
-  const [cuisine, setCuisine] = useState(restaurant.cuisine)
+  const [cuisine, setCuisine] = useState(CUISINES.includes(restaurant.cuisine) ? restaurant.cuisine : 'Other')
+  const [customCuisine, setCustomCuisine] = useState(CUISINES.includes(restaurant.cuisine) ? '' : restaurant.cuisine)
   const [priceRange, setPriceRange] = useState(restaurant.price_range)
   const [phone, setPhone] = useState(restaurant.phone || '')
   const [website, setWebsite] = useState(restaurant.website || '')
@@ -65,7 +66,7 @@ export default function EditRestaurantModal({ restaurant, onClose, onSaved }: Pr
         address,
         lat,
         lng,
-        cuisine,
+        cuisine: cuisine === 'Other' ? (customCuisine.trim() || 'Other') : cuisine,
         price_range: priceRange,
         phone: phone || undefined,
         website: website || undefined,
@@ -129,6 +130,14 @@ export default function EditRestaurantModal({ restaurant, onClose, onSaved }: Pr
               className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
               {CUISINES.map(c => <option key={c}>{c}</option>)}
             </select>
+            {cuisine === 'Other' && (
+              <input
+                value={customCuisine}
+                onChange={e => setCustomCuisine(e.target.value)}
+                placeholder="Enter cuisine type…"
+                className="mt-2 w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            )}
           </div>
 
           <div>
