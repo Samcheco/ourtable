@@ -28,6 +28,11 @@ export async function saveRestaurant(r: Omit<Restaurant, 'id' | 'created_at'>): 
   return data as Restaurant
 }
 
+export async function updateRestaurant(id: string, updates: Partial<Omit<Restaurant, 'id' | 'created_at'>>): Promise<void> {
+  if (!USE_SUPABASE) return
+  await supabase.from('restaurants').update(updates).eq('id', id)
+}
+
 // ── Visits ───────────────────────────────────────────────────────────────────
 
 export async function getAllVisitsWithDetails(): Promise<Visit[]> {

@@ -1,12 +1,13 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { MapPin, Globe, Phone, ArrowLeft, Plus, Trash2, PenLine } from 'lucide-react'
+import { MapPin, Globe, Phone, ArrowLeft, Plus, Trash2, PenLine, Pencil } from 'lucide-react'
 import * as db from '../lib/db'
 import { useData } from '../lib/DataContext'
 import { format } from 'date-fns'
 import StarRating from '../components/StarRating'
 import PriceTag from '../components/PriceTag'
 import AddReviewModal from '../components/AddReviewModal'
+import EditRestaurantModal from '../components/EditRestaurantModal'
 import type { Restaurant, Visit, Reviewer } from '../types'
 import { isReviewSealed, sealedMinsLeft as sealMinsLeft } from '../lib/seal'
 
@@ -17,6 +18,7 @@ export default function RestaurantDetail() {
   const [restaurant, setRestaurant] = useState<Restaurant | undefined>()
   const [visits, setVisits] = useState<Visit[]>([])
   const [reviewModal, setReviewModal] = useState<{ visitId: string; reviewer: Reviewer } | null>(null)
+  const [editModal, setEditModal] = useState(false)
   const [, setTick] = useState(0)
 
   useEffect(() => {
@@ -90,7 +92,10 @@ export default function RestaurantDetail() {
           <div className="flex flex-col gap-2 items-end">
             {visits.some(v => v.reviews?.some(r => r.is_pick && r.reviewer === 'sam')) && <span className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">⭐ Sam's Pick</span>}
             {visits.some(v => v.reviews?.some(r => r.is_pick && r.reviewer === 'olivia')) && <span className="bg-pink-100 text-pink-700 text-xs px-3 py-1 rounded-full font-medium">⭐ Olivia's Pick</span>}
-            <button onClick={handleDeleteRestaurant} className="text-stone-300 hover:text-red-400 transition-colors mt-1" title="Delete restaurant"><Trash2 size={16} /></button>
+            <div className="flex gap-3 mt-1">
+              <button onClick={() => setEditModal(true)} className="text-stone-300 hover:text-amber-500 transition-colors" title="Edit restaurant"><Pencil size={16} /></button>
+              <button onClick={handleDeleteRestaurant} className="text-stone-300 hover:text-red-400 transition-colors" title="Delete restaurant"><Trash2 size={16} /></button>
+            </div>
             {disagreement && <span className="bg-orange-100 text-orange-700 text-xs px-3 py-1 rounded-full font-medium">🤔 Divided Opinion</span>}
           </div>
         </div>
@@ -231,6 +236,14 @@ export default function RestaurantDetail() {
           reviewer={reviewModal.reviewer}
           existing={visits.find(v => v.id === reviewModal.visitId)?.reviews?.find(r => r.reviewer === reviewModal.reviewer)}
           onClose={() => setReviewModal(null)}
+          onSaved={async () => { await load(); refresh() }}
+        />
+      )}
+
+      {editModal && (
+        <EditRestaurantModal
+          restaurant={restaurant}
+          onClose={() => setEditModal(false)}
           onSaved={async () => { await load(); refresh() }}
         />
       )}
