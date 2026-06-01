@@ -1,16 +1,24 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Heart, X, Star, RefreshCw, MapPin, Loader, ChevronLeft, ChevronRight, Globe } from 'lucide-react'
+import { Heart, X, Star, MapPin, Loader, ChevronLeft, ChevronRight, Globe, RotateCcw, Compass, Map } from 'lucide-react'
 import type { NearbyPlace, PlaceDetails } from '../lib/googlePlaces'
 import { getPlaceDetails, inferCuisine } from '../lib/googlePlaces'
 import PriceTag from './PriceTag'
+
+export interface EmptyAction {
+  label: string
+  description: string
+  icon: 'expand' | 'resurface' | 'reset' | 'map'
+  onPress: () => void
+}
 
 interface Props {
   cards: NearbyPlace[]
   loading: boolean
   loadingMore: boolean
+  loadingLabel?: string
+  emptyActions?: EmptyAction[]
   onLike: (place: NearbyPlace) => void
   onSkip: (place: NearbyPlace) => void
-  onRefresh: () => void
   onRunningLow: () => void
 }
 
@@ -29,7 +37,7 @@ const SIGNAL_STYLE: Record<string, string> = {
   'Local favorite': 'bg-stone-100 text-stone-600',
 }
 
-export default function DiscoverCards({ cards, loading, loadingMore, onLike, onSkip, onRefresh, onRunningLow }: Props) {
+export default function DiscoverCards({ cards, loading, loadingMore, loadingLabel, emptyActions = [], onLike, onSkip, onRunningLow }: Props) {
   const [index, setIndex] = useState(0)
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
@@ -111,28 +119,48 @@ export default function DiscoverCards({ cards, loading, loadingMore, onLike, onS
     }
   }, [dragX])
 
+  const ICON_MAP = {
+    expand: <Compass size={18} className="text-amber-600" />,
+    resurface: <RotateCcw size={18} className="text-amber-600" />,
+    reset: <RotateCcw size={18} className="text-amber-600" />,
+    map: <Map size={18} className="text-amber-600" />,
+  }
+
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-24 text-stone-400 gap-3">
       <Loader size={32} className="animate-spin text-amber-500" />
-      <p className="text-sm">Finding great restaurants near you…</p>
+      <p className="text-sm">{loadingLabel || 'Finding great restaurants near you…'}</p>
     </div>
   )
 
   if (!current) return (
-    <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
+    <div className="flex flex-col items-center py-12 text-center gap-5 px-2">
       {loadingMore ? (
         <>
-          <Loader size={32} className="animate-spin text-amber-500" />
-          <p className="text-stone-400 text-sm">Finding more restaurants…</p>
+          <Loader size={28} className="animate-spin text-amber-500" />
+          <p className="text-stone-400 text-sm">{loadingLabel || 'Finding more places…'}</p>
         </>
       ) : (
         <>
-          <div className="text-5xl">🍽️</div>
-          <p className="font-semibold text-stone-700">You've seen them all!</p>
-          <p className="text-stone-400 text-sm">Try a wider search or come back when you're somewhere new</p>
-          <button onClick={onRefresh} className="flex items-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-800 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
-            <RefreshCw size={15} /> Search wider area
-          </button>
+          <div className="text-4xl">🗺️</div>
+          <div>
+            <p className="font-semibold text-stone-700 mb-1">You've covered the good spots nearby</p>
+            <p className="text-stone-400 text-sm">Here are a few ways to keep going:</p>
+          </div>
+          <div className="w-full space-y-2.5 max-w-sm">
+            {emptyActions.map((action, i) => (
+              <button key={i} onClick={action.onPress}
+                className="w-full flex items-center gap-3 bg-white border border-amber-100 rounded-2xl p-4 text-left hover:bg-amber-50 active:scale-[0.98] transition-all shadow-sm">
+                <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center shrink-0">
+                  {ICON_MAP[action.icon]}
+                </div>
+                <div>
+                  <p className="font-medium text-stone-800 text-sm">{action.label}</p>
+                  <p className="text-stone-400 text-xs mt-0.5">{action.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
         </>
       )}
     </div>
@@ -204,7 +232,7 @@ export default function DiscoverCards({ cards, loading, loadingMore, onLike, onS
 
       {loadingMore ? (
         <p className="text-xs text-amber-500 flex items-center gap-1">
-          <Loader size={10} className="animate-spin" /> Finding more places…
+          <Loader size={10} className="animate-spin" /> {loadingLabel || 'Finding more places…'}
         </p>
       ) : (
         <p className="text-xs text-stone-400">Swipe right to wishlist · swipe left to skip</p>

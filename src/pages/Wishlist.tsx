@@ -3,13 +3,12 @@ import { Search, Plus, Trash2, Shuffle, MapPin, Compass } from 'lucide-react'
 import { useData } from '../lib/DataContext'
 import * as db from '../lib/db'
 import { searchRestaurants, formatAddress } from '../lib/nominatim'
-import {
-  loadGoogleMaps, searchNearbyRestaurants, reverseGeocodeCity,
-  type NearbyPlace,
-} from '../lib/googlePlaces'
+import { loadGoogleMaps, reverseGeocodeCity, type NearbyPlace } from '../lib/googlePlaces'
+import { STRATEGIES, MIN_CARDS_PER_STRATEGY, runStrategy, type StrategyId } from '../lib/discoverStrategies'
+import { DiscoverMemory } from '../lib/discoverMemory'
 import type { NominatimResult, Reviewer } from '../types'
 import PriceTag from '../components/PriceTag'
-import DiscoverCards from '../components/DiscoverCards'
+import DiscoverCards, { type EmptyAction } from '../components/DiscoverCards'
 
 const CUISINES = ['Italian', 'Japanese', 'Mexican', 'American', 'Chinese', 'Indian', 'Thai', 'French', 'Mediterranean', 'Korean', 'Other']
 
@@ -37,11 +36,13 @@ export default function Wishlist() {
   const [discoverCards, setDiscoverCards] = useState<NearbyPlace[]>([])
   const [discoverLoading, setDiscoverLoading] = useState(false)
   const [discoverLoadingMore, setDiscoverLoadingMore] = useState(false)
+  const [discoverLoadingLabel, setDiscoverLoadingLabel] = useState('')
   const [discoverCity, setDiscoverCity] = useState<string | null>(null)
   const [discoverError, setDiscoverError] = useState<string | null>(null)
   const [locationAsked, setLocationAsked] = useState(false)
+  const [strategiesExhausted, setStrategiesExhausted] = useState(false)
   const userLocation = useRef<{ lat: number; lng: number } | null>(null)
-  const searchRadius = useRef(10000)
+  const triedStrategies = useRef<Set<StrategyId>>(new Set())
 
   // ── Wishlist helpers ──────────────────────────────────────────────────────
   function handleSearch(q: string) {
@@ -83,54 +84,98 @@ export default function Wishlist() {
   }
 
   // ── Discover helpers ──────────────────────────────────────────────────────
-  function filterNearby(nearby: NearbyPlace[], existingIds: Set<string>) {
-    const visitedNames = new Set(
-      visits.map(v => v.restaurant?.name?.toLowerCase()).filter(Boolean)
-    )
-    const wishlistedNames = new Set(wishlist.map(w => w.name.toLowerCase()))
-    return nearby.filter(p =>
+  function getWishlistedNames() {
+    return new Set(wishlist.map(w => w.name.toLowerCase()))
+  }
+
+  function filterPlaces(places: NearbyPlace[], existingIds: Set<string>): NearbyPlace[] {
+    const visitedNames = new Set(visits.map(v => v.restaurant?.name?.toLowerCase()).filter(Boolean) as string[])
+    const wishlistedNames = getWishlistedNames()
+    const memoryHidden = DiscoverMemory.getHiddenIds(wishlistedNames)
+    return places.filter(p =>
+      !existingIds.has(p.placeId) &&
+      !memoryHidden.has(p.placeId) &&
       !visitedNames.has(p.name.toLowerCase()) &&
-      !wishlistedNames.has(p.name.toLowerCase()) &&
-      !existingIds.has(p.placeId)
+      !wishlistedNames.has(p.name.toLowerCase())
     )
   }
 
   const loadDiscover = useCallback(async (lat: number, lng: number) => {
     setDiscoverLoading(true)
     setDiscoverError(null)
-    searchRadius.current = 10000
+    setStrategiesExhausted(false)
+    triedStrategies.current = new Set()
     try {
       await loadGoogleMaps()
-      const [city, nearby] = await Promise.all([
-        reverseGeocodeCity(lat, lng),
-        searchNearbyRestaurants(lat, lng),
-      ])
+      const city = await reverseGeocodeCity(lat, lng)
       setDiscoverCity(city)
       userLocation.current = { lat, lng }
-      setDiscoverCards(filterNearby(nearby, new Set()))
+      // Run first strategy
+      await runNextStrategy(lat, lng, [], true)
     } catch {
       setDiscoverError('Could not load restaurants. Check your connection and try again.')
-    } finally {
       setDiscoverLoading(false)
     }
   }, [visits, wishlist])
 
-  const loadMoreDiscover = useCallback(async () => {
-    if (!userLocation.current || discoverLoadingMore) return
-    setDiscoverLoadingMore(true)
-    searchRadius.current = Math.min(searchRadius.current + 10000, 40000)
-    try {
-      const { lat, lng } = userLocation.current
-      const nearby = await searchNearbyRestaurants(lat, lng)
-      setDiscoverCards(prev => {
-        const existingIds = new Set(prev.map(p => p.placeId))
-        const newOnes = filterNearby(nearby, existingIds)
-        return [...prev, ...newOnes]
-      })
-    } finally {
-      setDiscoverLoadingMore(false)
+  async function runNextStrategy(
+    lat: number,
+    lng: number,
+    currentCards: NearbyPlace[],
+    isInitial = false
+  ) {
+    const nextStrategy = STRATEGIES.find(s => !triedStrategies.current.has(s.id))
+    if (!nextStrategy) {
+      setStrategiesExhausted(true)
+      if (isInitial) setDiscoverLoading(false)
+      else setDiscoverLoadingMore(false)
+      return
     }
-  }, [discoverLoadingMore, visits, wishlist])
+
+    triedStrategies.current.add(nextStrategy.id)
+    setDiscoverLoadingLabel(nextStrategy.description)
+
+    const existingIds = new Set(currentCards.map(p => p.placeId))
+    const hiddenIds = DiscoverMemory.getHiddenIds(getWishlistedNames())
+    const allHidden = new Set([...existingIds, ...hiddenIds])
+    const visitedNames = new Set(visits.map(v => v.restaurant?.name?.toLowerCase()).filter(Boolean) as string[])
+    const wishlistedNames = getWishlistedNames()
+
+    const results = await runStrategy(nextStrategy.id, {
+      lat, lng,
+      hiddenIds: allHidden,
+      wishlistedNames,
+    })
+
+    const fresh = results.filter(p =>
+      !allHidden.has(p.placeId) &&
+      !visitedNames.has(p.name.toLowerCase()) &&
+      !wishlistedNames.has(p.name.toLowerCase())
+    )
+
+    if (fresh.length >= MIN_CARDS_PER_STRATEGY) {
+      if (isInitial) {
+        setDiscoverCards(fresh)
+        setDiscoverLoading(false)
+      } else {
+        setDiscoverCards(prev => [...prev, ...fresh])
+        setDiscoverLoadingMore(false)
+      }
+    } else {
+      // Not enough — try next strategy automatically
+      const merged = isInitial ? fresh : [...currentCards, ...fresh]
+      if (isInitial) setDiscoverCards(merged)
+      else setDiscoverCards(merged)
+      await runNextStrategy(lat, lng, merged, isInitial)
+    }
+  }
+
+  const loadMoreDiscover = useCallback(async () => {
+    if (!userLocation.current || discoverLoadingMore || strategiesExhausted) return
+    setDiscoverLoadingMore(true)
+    const { lat, lng } = userLocation.current
+    await runNextStrategy(lat, lng, discoverCards)
+  }, [discoverLoadingMore, strategiesExhausted, discoverCards, visits, wishlist])
 
   function requestLocation() {
     setLocationAsked(true)
@@ -150,12 +195,13 @@ export default function Wishlist() {
   }
 
   async function handleLike(place: NearbyPlace) {
+    DiscoverMemory.record(place, 'liked', discoverCity || undefined)
     await db.saveWishlistItem({
       name: place.name,
       address: place.address,
       cuisine: 'Other',
       price_range: place.priceLevel,
-      notes: `⭐ ${place.rating} on Google`,
+      notes: place.knownFor ? `Known for: ${place.knownFor}` : `⭐ ${place.rating} on Google`,
       added_by: 'sam',
       lat: place.lat,
       lng: place.lng,
@@ -165,8 +211,58 @@ export default function Wishlist() {
     await refresh()
   }
 
-  function handleSkip(_place: NearbyPlace) {
-    // Just move to next card, no action needed
+  function handleSkip(place: NearbyPlace) {
+    DiscoverMemory.record(place, 'skipped', discoverCity || undefined)
+  }
+
+  function buildEmptyActions(): EmptyAction[] {
+    const loc = userLocation.current
+    const actions: EmptyAction[] = []
+
+    // Try resurfacing old skips if any exist
+    const resurfaceable = DiscoverMemory.forceResurfaceAll(getWishlistedNames())
+    if (resurfaceable.length > 0) {
+      actions.push({
+        label: 'Show me older skips',
+        description: `${resurfaceable.length} places you passed on before`,
+        icon: 'resurface',
+        onPress: () => {
+          const fresh = filterPlaces(resurfaceable, new Set(discoverCards.map(p => p.placeId)))
+          setDiscoverCards(prev => [...prev, ...fresh])
+          setStrategiesExhausted(false)
+        },
+      })
+    }
+
+    // Retry all strategies from scratch
+    if (loc) {
+      actions.push({
+        label: 'Start fresh in this area',
+        description: 'Clear history and rediscover from the top',
+        icon: 'reset',
+        onPress: () => {
+          DiscoverMemory.clear()
+          triedStrategies.current = new Set()
+          setDiscoverCards([])
+          setStrategiesExhausted(false)
+          loadDiscover(loc.lat, loc.lng)
+        },
+      })
+    }
+
+    actions.push({
+      label: 'Try somewhere new',
+      description: 'Discovery works best when you\'re in a new neighborhood or city',
+      icon: 'map',
+      onPress: () => {
+        setLocationAsked(false)
+        setDiscoverCards([])
+        setStrategiesExhausted(false)
+        triedStrategies.current = new Set()
+      },
+    })
+
+    return actions
   }
 
   // ── Wishlist grouped by city ──────────────────────────────────────────────
@@ -248,10 +344,11 @@ export default function Wishlist() {
               cards={discoverCards}
               loading={discoverLoading}
               loadingMore={discoverLoadingMore}
+              loadingLabel={discoverLoadingLabel}
+              emptyActions={buildEmptyActions()}
               onLike={handleLike}
               onSkip={handleSkip}
               onRunningLow={loadMoreDiscover}
-              onRefresh={() => { setLocationAsked(false); setDiscoverCards([]); searchRadius.current = 10000 }}
             />
           )}
         </div>

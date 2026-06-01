@@ -159,8 +159,25 @@ export interface NearbyPlace {
   isChain?: boolean
 }
 
+export interface NearbySearchOptions {
+  radius?: number
+  placeType?: string
+  minRating?: number
+  minReviews?: number
+}
+
 // Returns well-regarded restaurants near a coordinate, up to 3 pages (60 results)
-export async function searchNearbyRestaurants(lat: number, lng: number): Promise<NearbyPlace[]> {
+export async function searchNearbyRestaurants(
+  lat: number,
+  lng: number,
+  options: NearbySearchOptions = {}
+): Promise<NearbyPlace[]> {
+  const {
+    radius = 10000,
+    placeType = 'restaurant',
+    minRating = 4.0,
+    minReviews = 100,
+  } = options
   await loadGoogleMaps()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const g = (window as any).google
@@ -219,8 +236,8 @@ export async function searchNearbyRestaurants(lat: number, lng: number): Promise
 
   function filterResults(results: any[]): any[] {
     return results.filter((p: any) =>
-      p.rating >= 4.0 &&
-      p.user_ratings_total >= 100 &&
+      p.rating >= minRating &&
+      p.user_ratings_total >= minReviews &&
       p.types?.some((t: string) => FOOD_TYPES.has(t)) &&
       !p.types?.some((t: string) => EXCLUDE_TYPES.has(t)) &&
       !isChain(p.name)
@@ -247,8 +264,8 @@ export async function searchNearbyRestaurants(lat: number, lng: number): Promise
 
     service.nearbySearch({
       location: { lat, lng },
-      radius: 10000,
-      type: 'restaurant',
+      radius,
+      type: placeType,
     }, handlePage)
   })
 }
