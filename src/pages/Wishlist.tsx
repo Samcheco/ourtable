@@ -36,9 +36,12 @@ export default function Wishlist() {
   // ── Discover state ────────────────────────────────────────────────────────
   const [discoverCards, setDiscoverCards] = useState<NearbyPlace[]>([])
   const [discoverLoading, setDiscoverLoading] = useState(false)
+  const [discoverLoadingMore, setDiscoverLoadingMore] = useState(false)
   const [discoverCity, setDiscoverCity] = useState<string | null>(null)
   const [discoverError, setDiscoverError] = useState<string | null>(null)
   const [locationAsked, setLocationAsked] = useState(false)
+  const userLocation = useRef<{ lat: number; lng: number } | null>(null)
+  const searchRadius = useRef(10000)
 
   // ── Wishlist helpers ──────────────────────────────────────────────────────
   function handleSearch(q: string) {
@@ -80,9 +83,22 @@ export default function Wishlist() {
   }
 
   // ── Discover helpers ──────────────────────────────────────────────────────
+  function filterNearby(nearby: NearbyPlace[], existingIds: Set<string>) {
+    const visitedNames = new Set(
+      visits.map(v => v.restaurant?.name?.toLowerCase()).filter(Boolean)
+    )
+    const wishlistedNames = new Set(wishlist.map(w => w.name.toLowerCase()))
+    return nearby.filter(p =>
+      !visitedNames.has(p.name.toLowerCase()) &&
+      !wishlistedNames.has(p.name.toLowerCase()) &&
+      !existingIds.has(p.placeId)
+    )
+  }
+
   const loadDiscover = useCallback(async (lat: number, lng: number) => {
     setDiscoverLoading(true)
     setDiscoverError(null)
+    searchRadius.current = 10000
     try {
       await loadGoogleMaps()
       const [city, nearby] = await Promise.all([
@@ -90,24 +106,31 @@ export default function Wishlist() {
         searchNearbyRestaurants(lat, lng),
       ])
       setDiscoverCity(city)
-
-      // Filter out places already visited or already wishlisted
-      const visitedNames = new Set(
-        visits.map(v => v.restaurant?.name?.toLowerCase()).filter(Boolean)
-      )
-      const wishlistedIds = new Set(wishlist.map(w => w.name.toLowerCase()))
-
-      const filtered = nearby.filter(p =>
-        !visitedNames.has(p.name.toLowerCase()) &&
-        !wishlistedIds.has(p.name.toLowerCase())
-      )
-      setDiscoverCards(filtered)
+      userLocation.current = { lat, lng }
+      setDiscoverCards(filterNearby(nearby, new Set()))
     } catch {
       setDiscoverError('Could not load restaurants. Check your connection and try again.')
     } finally {
       setDiscoverLoading(false)
     }
   }, [visits, wishlist])
+
+  const loadMoreDiscover = useCallback(async () => {
+    if (!userLocation.current || discoverLoadingMore) return
+    setDiscoverLoadingMore(true)
+    searchRadius.current = Math.min(searchRadius.current + 10000, 40000)
+    try {
+      const { lat, lng } = userLocation.current
+      const nearby = await searchNearbyRestaurants(lat, lng)
+      setDiscoverCards(prev => {
+        const existingIds = new Set(prev.map(p => p.placeId))
+        const newOnes = filterNearby(nearby, existingIds)
+        return [...prev, ...newOnes]
+      })
+    } finally {
+      setDiscoverLoadingMore(false)
+    }
+  }, [discoverLoadingMore, visits, wishlist])
 
   function requestLocation() {
     setLocationAsked(true)
@@ -224,9 +247,11 @@ export default function Wishlist() {
             <DiscoverCards
               cards={discoverCards}
               loading={discoverLoading}
+              loadingMore={discoverLoadingMore}
               onLike={handleLike}
               onSkip={handleSkip}
-              onRefresh={() => { setLocationAsked(false); setDiscoverCards([]) }}
+              onRunningLow={loadMoreDiscover}
+              onRefresh={() => { setLocationAsked(false); setDiscoverCards([]); searchRadius.current = 10000 }}
             />
           )}
         </div>

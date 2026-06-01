@@ -7,15 +7,18 @@ import PriceTag from './PriceTag'
 interface Props {
   cards: NearbyPlace[]
   loading: boolean
+  loadingMore: boolean
   onLike: (place: NearbyPlace) => void
   onSkip: (place: NearbyPlace) => void
   onRefresh: () => void
+  onRunningLow: () => void
 }
 
 const SWIPE_THRESHOLD = 90
 
-export default function DiscoverCards({ cards, loading, onLike, onSkip, onRefresh }: Props) {
+export default function DiscoverCards({ cards, loading, loadingMore, onLike, onSkip, onRefresh, onRunningLow }: Props) {
   const [index, setIndex] = useState(0)
+  const hasCalledRunningLow = useRef(false)
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [exiting, setExiting] = useState<'left' | 'right' | null>(null)
@@ -27,6 +30,20 @@ export default function DiscoverCards({ cards, loading, onLike, onSkip, onRefres
 
   const current = cards[index]
   const next = cards[index + 1]
+
+  // Fire onRunningLow when 3 cards remain
+  useEffect(() => {
+    const remaining = cards.length - index
+    if (remaining <= 3 && remaining > 0 && !hasCalledRunningLow.current) {
+      hasCalledRunningLow.current = true
+      onRunningLow()
+    }
+  }, [index, cards.length])
+
+  // Reset the flag when new cards are appended
+  useEffect(() => {
+    if (cards.length > index + 3) hasCalledRunningLow.current = false
+  }, [cards.length])
 
   // Pre-fetch details for current + next card
   useEffect(() => {
@@ -94,12 +111,21 @@ export default function DiscoverCards({ cards, loading, onLike, onSkip, onRefres
 
   if (!current) return (
     <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
-      <div className="text-5xl">🍽️</div>
-      <p className="font-semibold text-stone-700">You've seen them all!</p>
-      <p className="text-stone-400 text-sm">Check back when you're in a new area</p>
-      <button onClick={onRefresh} className="flex items-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-800 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
-        <RefreshCw size={15} /> Refresh
-      </button>
+      {loadingMore ? (
+        <>
+          <Loader size={32} className="animate-spin text-amber-500" />
+          <p className="text-stone-400 text-sm">Finding more restaurants…</p>
+        </>
+      ) : (
+        <>
+          <div className="text-5xl">🍽️</div>
+          <p className="font-semibold text-stone-700">You've seen them all!</p>
+          <p className="text-stone-400 text-sm">Try a wider search or come back when you're somewhere new</p>
+          <button onClick={onRefresh} className="flex items-center gap-2 bg-amber-100 hover:bg-amber-200 text-amber-800 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
+            <RefreshCw size={15} /> Search wider area
+          </button>
+        </>
+      )}
     </div>
   )
 
@@ -171,7 +197,11 @@ export default function DiscoverCards({ cards, loading, onLike, onSkip, onRefres
           <Heart size={24} className="text-green-500" />
         </button>
       </div>
-      <p className="text-xs text-stone-400">Swipe right to wishlist · swipe left to skip</p>
+      {loadingMore ? (
+        <p className="text-xs text-amber-500 flex items-center gap-1"><Loader size={10} className="animate-spin" /> Finding more places…</p>
+      ) : (
+        <p className="text-xs text-stone-400">Swipe right to wishlist · swipe left to skip</p>
+      )}
     </div>
   )
 }
