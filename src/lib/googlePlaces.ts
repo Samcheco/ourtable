@@ -62,6 +62,76 @@ export function attachAutocomplete(
 
 export const isGoogleConfigured = () => Boolean(API_KEY)
 
+// Map Google place types → readable cuisine label
+const TYPE_TO_CUISINE: Record<string, string> = {
+  american_restaurant: 'American', bakery: 'Bakery', bar: 'Bar',
+  barbecue_restaurant: 'BBQ', brazilian_restaurant: 'Brazilian',
+  breakfast_restaurant: 'Breakfast', brunch_restaurant: 'Brunch',
+  cafe: 'Café', chinese_restaurant: 'Chinese', coffee_shop: 'Coffee',
+  fast_food_restaurant: 'Fast Food', french_restaurant: 'French',
+  greek_restaurant: 'Greek', hamburger_restaurant: 'Burgers',
+  indian_restaurant: 'Indian', indonesian_restaurant: 'Indonesian',
+  italian_restaurant: 'Italian', japanese_restaurant: 'Japanese',
+  korean_restaurant: 'Korean', latin_american_restaurant: 'Latin American',
+  lebanese_restaurant: 'Lebanese', mediterranean_restaurant: 'Mediterranean',
+  mexican_restaurant: 'Mexican', middle_eastern_restaurant: 'Middle Eastern',
+  pizza_restaurant: 'Pizza', ramen_restaurant: 'Ramen',
+  sandwich_shop: 'Sandwiches', seafood_restaurant: 'Seafood',
+  spanish_restaurant: 'Spanish', sushi_restaurant: 'Sushi',
+  steakhouse: 'Steakhouse', thai_restaurant: 'Thai',
+  turkish_restaurant: 'Turkish', vegan_restaurant: 'Vegan',
+  vietnamese_restaurant: 'Vietnamese',
+}
+
+export function inferCuisine(types: string[]): string {
+  for (const t of types) {
+    if (TYPE_TO_CUISINE[t]) return TYPE_TO_CUISINE[t]
+  }
+  return 'Restaurant'
+}
+
+export interface PlaceDetails {
+  photos: string[]
+  reviews: { author: string; rating: number; text: string }[]
+  openNow?: boolean
+  website?: string
+  phone?: string
+  editorialSummary?: string
+}
+
+export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
+  await loadGoogleMaps()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const g = (window as any).google
+  const div = document.createElement('div')
+  const service = new g.maps.places.PlacesService(div)
+
+  return new Promise((resolve) => {
+    service.getDetails({
+      placeId,
+      fields: ['photos', 'reviews', 'opening_hours', 'website', 'formatted_phone_number', 'editorial_summary'],
+    }, (place: any, status: string) => {
+      if (status !== g.maps.places.PlacesServiceStatus.OK || !place) {
+        resolve({ photos: [], reviews: [] }); return
+      }
+      resolve({
+        photos: (place.photos || []).slice(0, 6).map((p: any) =>
+          p.getUrl({ maxWidth: 800, maxHeight: 600 })
+        ),
+        reviews: (place.reviews || []).slice(0, 3).map((r: any) => ({
+          author: r.author_name,
+          rating: r.rating,
+          text: r.text,
+        })),
+        openNow: place.opening_hours?.isOpen?.(),
+        website: place.website,
+        phone: place.formatted_phone_number,
+        editorialSummary: place.editorial_summary?.overview,
+      })
+    })
+  })
+}
+
 export interface NearbyPlace {
   placeId: string
   name: string
@@ -69,8 +139,10 @@ export interface NearbyPlace {
   lat: number
   lng: number
   rating: number
+  userRatingsTotal: number
   priceLevel: 1 | 2 | 3 | 4
   photoUrl: string
+  photoUrls: string[]
   types: string[]
 }
 
@@ -109,8 +181,10 @@ export async function searchNearbyRestaurants(lat: number, lng: number): Promise
           lat: p.geometry.location.lat(),
           lng: p.geometry.location.lng(),
           rating: p.rating,
+          userRatingsTotal: p.user_ratings_total || 0,
           priceLevel: Math.max(1, Math.min(4, p.price_level || 2)) as 1|2|3|4,
-          photoUrl: p.photos?.[0]?.getUrl({ maxWidth: 600, maxHeight: 400 }) || '',
+          photoUrl: p.photos?.[0]?.getUrl({ maxWidth: 800, maxHeight: 600 }) || '',
+          photoUrls: (p.photos || []).slice(0, 6).map((ph: any) => ph.getUrl({ maxWidth: 800, maxHeight: 600 })),
           types: p.types || [],
         }))
       resolve(places)
