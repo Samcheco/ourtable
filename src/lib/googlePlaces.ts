@@ -1,3 +1,5 @@
+import { findCuratedMatch, isChain } from './curatedRestaurants'
+
 const API_KEY = import.meta.env.VITE_GOOGLE_PLACES_KEY || ''
 
 export function loadGoogleMaps(): Promise<void> {
@@ -144,6 +146,17 @@ export interface NearbyPlace {
   photoUrl: string
   photoUrls: string[]
   types: string[]
+  // Curated metadata (set when matched against curated list)
+  neighborhood?: string
+  vibe?: string[]
+  whyGo?: string
+  knownFor?: string
+  goodFor?: string[]
+  signals?: string[]
+  confidence?: 'high' | 'medium' | 'low'
+  editorialScore?: number
+  isCurated?: boolean
+  isChain?: boolean
 }
 
 // Returns well-regarded restaurants near a coordinate, up to 3 pages (60 results)
@@ -158,7 +171,9 @@ export async function searchNearbyRestaurants(lat: number, lng: number): Promise
   const EXCLUDE_TYPES = new Set(['lodging', 'hotel', 'motel', 'spa', 'gym', 'store', 'supermarket', 'gas_station', 'shopping_mall', 'department_store', 'clothing_store', 'movie_theater', 'night_club'])
 
   function toNearbyPlace(p: any): NearbyPlace {
-    return {
+    const curated = findCuratedMatch(p.name)
+    const chain = isChain(p.name)
+    const base: NearbyPlace = {
       placeId: p.place_id,
       name: p.name,
       address: p.vicinity || '',
@@ -170,7 +185,36 @@ export async function searchNearbyRestaurants(lat: number, lng: number): Promise
       photoUrl: p.photos?.[0]?.getUrl({ maxWidth: 800, maxHeight: 600 }) || '',
       photoUrls: (p.photos || []).slice(0, 6).map((ph: any) => ph.getUrl({ maxWidth: 800, maxHeight: 600 })),
       types: p.types || [],
+      isChain: chain,
+      isCurated: !!curated,
+      editorialScore: curated ? curated.editorialScore : chain ? 0 : heuristicScore(p),
     }
+    if (curated) {
+      Object.assign(base, {
+        neighborhood: curated.neighborhood,
+        vibe: curated.vibe,
+        whyGo: curated.whyGo,
+        knownFor: curated.knownFor,
+        goodFor: curated.goodFor,
+        signals: curated.signals,
+        confidence: curated.confidence,
+        priceLevel: curated.price,
+      })
+    }
+    return base
+  }
+
+  // Heuristic score for non-curated places (0–60)
+  function heuristicScore(p: any): number {
+    let score = 40
+    // Bonus for very high rating with meaningful review count
+    if (p.rating >= 4.5 && p.user_ratings_total >= 500) score += 10
+    else if (p.rating >= 4.3 && p.user_ratings_total >= 300) score += 5
+    // Penalty for extremely high review counts (tourist trap signal)
+    if (p.user_ratings_total > 5000) score -= 10
+    // Bonus for moderate review counts (local discovery)
+    if (p.user_ratings_total >= 100 && p.user_ratings_total <= 1000) score += 5
+    return Math.max(0, Math.min(60, score))
   }
 
   function filterResults(results: any[]): any[] {
@@ -178,7 +222,8 @@ export async function searchNearbyRestaurants(lat: number, lng: number): Promise
       p.rating >= 4.0 &&
       p.user_ratings_total >= 100 &&
       p.types?.some((t: string) => FOOD_TYPES.has(t)) &&
-      !p.types?.some((t: string) => EXCLUDE_TYPES.has(t))
+      !p.types?.some((t: string) => EXCLUDE_TYPES.has(t)) &&
+      !isChain(p.name)
     )
   }
 
@@ -189,13 +234,13 @@ export async function searchNearbyRestaurants(lat: number, lng: number): Promise
       if (status === g.maps.places.PlacesServiceStatus.OK && results) {
         allRaw.push(...results)
       }
-      // Fetch next page if available (Google requires a small delay between pages)
       if (pagination?.hasNextPage && allRaw.length < 60) {
         setTimeout(() => pagination.nextPage(), 1200)
       } else {
         const places = filterResults(allRaw)
-          .sort((a: any, b: any) => b.user_ratings_total - a.user_ratings_total)
           .map(toNearbyPlace)
+          // Sort: curated first (by editorial score), then heuristic
+          .sort((a, b) => (b.editorialScore ?? 0) - (a.editorialScore ?? 0))
         resolve(places)
       }
     }
