@@ -83,17 +83,23 @@ export async function searchNearbyRestaurants(lat: number, lng: number): Promise
   const service = new g.maps.places.PlacesService(div)
 
   return new Promise((resolve) => {
+    const EXCLUDE_TYPES = new Set(['lodging', 'hotel', 'motel', 'spa', 'gym', 'store', 'supermarket', 'gas_station'])
+
     service.nearbySearch({
       location: { lat, lng },
       radius: 10000,
       type: 'restaurant',
-      rankBy: g.maps.places.RankBy.PROMINENCE,
     }, (results: any[], status: string) => {
       if (status !== g.maps.places.PlacesServiceStatus.OK || !results) {
         resolve([]); return
       }
       const places: NearbyPlace[] = results
-        .filter((p: any) => p.rating >= 4.0 && p.user_ratings_total >= 200)
+        .filter((p: any) =>
+          p.rating >= 4.0 &&
+          p.user_ratings_total >= 100 &&
+          !p.types?.some((t: string) => EXCLUDE_TYPES.has(t))
+        )
+        .sort((a: any, b: any) => (b.user_ratings_total - a.user_ratings_total))
         .map((p: any) => ({
           placeId: p.place_id,
           name: p.name,
