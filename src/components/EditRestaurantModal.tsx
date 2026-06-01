@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { X } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, MapPin, Search } from 'lucide-react'
 import type { Restaurant } from '../types'
 import * as db from '../lib/db'
+import { loadGoogleMaps, attachAutocomplete, isGoogleConfigured } from '../lib/googlePlaces'
 
 const CUISINES = [
   'American', 'Chinese', 'French', 'Indian', 'Italian',
@@ -17,11 +18,32 @@ interface Props {
 export default function EditRestaurantModal({ restaurant, onClose, onSaved }: Props) {
   const [name, setName] = useState(restaurant.name)
   const [address, setAddress] = useState(restaurant.address)
+  const [lat, setLat] = useState(restaurant.lat)
+  const [lng, setLng] = useState(restaurant.lng)
   const [cuisine, setCuisine] = useState(restaurant.cuisine)
   const [priceRange, setPriceRange] = useState(restaurant.price_range)
   const [phone, setPhone] = useState(restaurant.phone || '')
   const [website, setWebsite] = useState(restaurant.website || '')
   const [saving, setSaving] = useState(false)
+  const [googleLoaded, setGoogleLoaded] = useState(false)
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!isGoogleConfigured()) return
+    loadGoogleMaps().then(() => setGoogleLoaded(true)).catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    if (!googleLoaded || !searchRef.current) return
+    return attachAutocomplete(searchRef.current, (place) => {
+      setName(place.name)
+      setAddress(place.address)
+      setLat(place.lat)
+      setLng(place.lng)
+      // Clear the search box so it shows the picked result cleanly
+      if (searchRef.current) searchRef.current.value = place.name
+    })
+  }, [googleLoaded])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -31,6 +53,8 @@ export default function EditRestaurantModal({ restaurant, onClose, onSaved }: Pr
       await db.updateRestaurant(restaurant.id, {
         name,
         address,
+        lat,
+        lng,
         cuisine,
         price_range: priceRange,
         phone: phone || undefined,
@@ -53,6 +77,30 @@ export default function EditRestaurantModal({ restaurant, onClose, onSaved }: Pr
         </div>
 
         <form onSubmit={handleSave} className="space-y-4">
+
+          {/* Google search to auto-fill location */}
+          {isGoogleConfigured() && (
+            <div>
+              <label className="block text-xs text-stone-400 mb-1">Search to change location</label>
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  ref={searchRef}
+                  defaultValue={restaurant.name}
+                  placeholder={googleLoaded ? 'Search for a location…' : 'Loading…'}
+                  disabled={!googleLoaded}
+                  className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-amber-300 bg-amber-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-50"
+                />
+              </div>
+              {address !== restaurant.address && (
+                <div className="mt-1.5 flex items-start gap-1.5 text-xs text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5">
+                  <MapPin size={11} className="mt-0.5 shrink-0" />
+                  <span>{address}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="block text-xs text-stone-400 mb-1">Name</label>
             <input value={name} onChange={e => setName(e.target.value)} required
