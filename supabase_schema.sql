@@ -59,6 +59,10 @@ create table wishlist (
   created_at timestamptz default now()
 );
 
+-- Migration: add city and photo_url to wishlist (run if upgrading)
+-- alter table wishlist add column if not exists city text;
+-- alter table wishlist add column if not exists photo_url text;
+
 -- Allow public read/write (no login required for this personal app)
 alter table restaurants enable row level security;
 alter table visits enable row level security;

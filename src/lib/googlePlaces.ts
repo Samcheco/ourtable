@@ -61,3 +61,76 @@ export function attachAutocomplete(
 }
 
 export const isGoogleConfigured = () => Boolean(API_KEY)
+
+export interface NearbyPlace {
+  placeId: string
+  name: string
+  address: string
+  lat: number
+  lng: number
+  rating: number
+  priceLevel: 1 | 2 | 3 | 4
+  photoUrl: string
+  types: string[]
+}
+
+// Returns well-regarded restaurants near a coordinate, sorted by prominence
+export async function searchNearbyRestaurants(lat: number, lng: number): Promise<NearbyPlace[]> {
+  await loadGoogleMaps()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const g = (window as any).google
+  const div = document.createElement('div')
+  const service = new g.maps.places.PlacesService(div)
+
+  return new Promise((resolve) => {
+    service.nearbySearch({
+      location: { lat, lng },
+      radius: 10000,
+      type: 'restaurant',
+      rankBy: g.maps.places.RankBy.PROMINENCE,
+    }, (results: any[], status: string) => {
+      if (status !== g.maps.places.PlacesServiceStatus.OK || !results) {
+        resolve([]); return
+      }
+      const places: NearbyPlace[] = results
+        .filter((p: any) => p.rating >= 4.0 && p.user_ratings_total >= 200)
+        .map((p: any) => ({
+          placeId: p.place_id,
+          name: p.name,
+          address: p.vicinity || '',
+          lat: p.geometry.location.lat(),
+          lng: p.geometry.location.lng(),
+          rating: p.rating,
+          priceLevel: Math.max(1, Math.min(4, p.price_level || 2)) as 1|2|3|4,
+          photoUrl: p.photos?.[0]?.getUrl({ maxWidth: 600, maxHeight: 400 }) || '',
+          types: p.types || [],
+        }))
+      resolve(places)
+    })
+  })
+}
+
+// Reverse geocode lat/lng to a human-readable city name
+export async function reverseGeocodeCity(lat: number, lng: number): Promise<string> {
+  await loadGoogleMaps()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const g = (window as any).google
+  const geocoder = new g.maps.Geocoder()
+  return new Promise((resolve) => {
+    geocoder.geocode({ location: { lat, lng } }, (results: any[], status: string) => {
+      if (status !== 'OK' || !results?.length) { resolve('Unknown City'); return }
+      // Find the locality (city) component
+      for (const result of results) {
+        const locality = result.address_components?.find((c: any) =>
+          c.types.includes('locality')
+        )
+        if (locality) { resolve(locality.long_name); return }
+      }
+      // Fallback to sublocality or neighborhood
+      const fallback = results[0]?.address_components?.find((c: any) =>
+        c.types.includes('sublocality') || c.types.includes('neighborhood')
+      )
+      resolve(fallback?.long_name || 'Unknown City')
+    })
+  })
+}

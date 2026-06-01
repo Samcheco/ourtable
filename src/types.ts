@@ -62,6 +62,8 @@ export interface WishlistItem {
   added_by: Reviewer
   lat?: number
   lng?: number
+  city?: string
+  photo_url?: string
   created_at: string
 }
 
