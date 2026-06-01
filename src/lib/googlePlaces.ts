@@ -146,7 +146,7 @@ export interface NearbyPlace {
   types: string[]
 }
 
-// Returns well-regarded restaurants near a coordinate, sorted by prominence
+// Returns well-regarded restaurants near a coordinate, up to 3 pages (60 results)
 export async function searchNearbyRestaurants(lat: number, lng: number): Promise<NearbyPlace[]> {
   await loadGoogleMaps()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -154,41 +154,57 @@ export async function searchNearbyRestaurants(lat: number, lng: number): Promise
   const div = document.createElement('div')
   const service = new g.maps.places.PlacesService(div)
 
+  const FOOD_TYPES = new Set(['restaurant', 'food', 'cafe', 'bakery', 'bar', 'meal_takeaway', 'meal_delivery'])
+  const EXCLUDE_TYPES = new Set(['lodging', 'hotel', 'motel', 'spa', 'gym', 'store', 'supermarket', 'gas_station', 'shopping_mall', 'department_store', 'clothing_store', 'movie_theater', 'night_club'])
+
+  function toNearbyPlace(p: any): NearbyPlace {
+    return {
+      placeId: p.place_id,
+      name: p.name,
+      address: p.vicinity || '',
+      lat: p.geometry.location.lat(),
+      lng: p.geometry.location.lng(),
+      rating: p.rating,
+      userRatingsTotal: p.user_ratings_total || 0,
+      priceLevel: Math.max(1, Math.min(4, p.price_level || 2)) as 1|2|3|4,
+      photoUrl: p.photos?.[0]?.getUrl({ maxWidth: 800, maxHeight: 600 }) || '',
+      photoUrls: (p.photos || []).slice(0, 6).map((ph: any) => ph.getUrl({ maxWidth: 800, maxHeight: 600 })),
+      types: p.types || [],
+    }
+  }
+
+  function filterResults(results: any[]): any[] {
+    return results.filter((p: any) =>
+      p.rating >= 4.0 &&
+      p.user_ratings_total >= 100 &&
+      p.types?.some((t: string) => FOOD_TYPES.has(t)) &&
+      !p.types?.some((t: string) => EXCLUDE_TYPES.has(t))
+    )
+  }
+
   return new Promise((resolve) => {
-    const FOOD_TYPES = new Set(['restaurant', 'food', 'cafe', 'bakery', 'bar', 'meal_takeaway', 'meal_delivery'])
-    const EXCLUDE_TYPES = new Set(['lodging', 'hotel', 'motel', 'spa', 'gym', 'store', 'supermarket', 'gas_station', 'shopping_mall', 'department_store', 'clothing_store', 'movie_theater', 'night_club'])
+    const allRaw: any[] = []
+
+    function handlePage(results: any[], status: string, pagination: any) {
+      if (status === g.maps.places.PlacesServiceStatus.OK && results) {
+        allRaw.push(...results)
+      }
+      // Fetch next page if available (Google requires a small delay between pages)
+      if (pagination?.hasNextPage && allRaw.length < 60) {
+        setTimeout(() => pagination.nextPage(), 1200)
+      } else {
+        const places = filterResults(allRaw)
+          .sort((a: any, b: any) => b.user_ratings_total - a.user_ratings_total)
+          .map(toNearbyPlace)
+        resolve(places)
+      }
+    }
 
     service.nearbySearch({
       location: { lat, lng },
       radius: 10000,
       type: 'restaurant',
-    }, (results: any[], status: string) => {
-      if (status !== g.maps.places.PlacesServiceStatus.OK || !results) {
-        resolve([]); return
-      }
-      const places: NearbyPlace[] = results
-        .filter((p: any) =>
-          p.rating >= 4.0 &&
-          p.user_ratings_total >= 100 &&
-          p.types?.some((t: string) => FOOD_TYPES.has(t)) &&
-          !p.types?.some((t: string) => EXCLUDE_TYPES.has(t))
-        )
-        .sort((a: any, b: any) => (b.user_ratings_total - a.user_ratings_total))
-        .map((p: any) => ({
-          placeId: p.place_id,
-          name: p.name,
-          address: p.vicinity || '',
-          lat: p.geometry.location.lat(),
-          lng: p.geometry.location.lng(),
-          rating: p.rating,
-          userRatingsTotal: p.user_ratings_total || 0,
-          priceLevel: Math.max(1, Math.min(4, p.price_level || 2)) as 1|2|3|4,
-          photoUrl: p.photos?.[0]?.getUrl({ maxWidth: 800, maxHeight: 600 }) || '',
-          photoUrls: (p.photos || []).slice(0, 6).map((ph: any) => ph.getUrl({ maxWidth: 800, maxHeight: 600 })),
-          types: p.types || [],
-        }))
-      resolve(places)
-    })
+    }, handlePage)
   })
 }
 
