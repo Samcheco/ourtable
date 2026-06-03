@@ -200,7 +200,7 @@ export default function DiscoverCards({ cards, loading, loadingMore, loadingLabe
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <CardContent place={current} details={detailsCache[current.placeId] || null} />
+          <CardContent key={current.placeId} place={current} details={detailsCache[current.placeId] || null} />
 
           <div className="absolute inset-0 bg-green-500/80 flex items-center justify-center rounded-3xl pointer-events-none"
             style={{ opacity: isLiking ? progress : 0 }}>
@@ -250,7 +250,7 @@ function CardContent({ place, details }: { place: NearbyPlace; details: PlaceDet
       ? place.photoUrls
       : place.photoUrl ? [place.photoUrl] : []
 
-  const cuisine = place.isCurated ? undefined : inferCuisine(place.types)
+  const cuisine = inferCuisine(place.types)
   const signals = place.signals || []
   const topSignals = signals.slice(0, 3)
 
@@ -294,30 +294,23 @@ function CardContent({ place, details }: { place: NearbyPlace; details: PlaceDet
           </>
         )}
 
-        {/* Rating + open badge */}
+        {/* Overlays: signal badges left, rating right */}
         <div className="absolute top-2.5 left-2.5 right-2.5 flex items-start justify-between pointer-events-none">
           <div className="flex flex-col gap-1">
             {topSignals.slice(0, 2).map(s => (
-              <span key={s} className={`text-xs px-2 py-0.5 rounded-full font-semibold ${SIGNAL_STYLE[s] || 'bg-white/90 text-stone-600'}`}>
+              <span key={s} className={`text-xs px-2 py-0.5 rounded-full font-semibold shadow-sm ${SIGNAL_STYLE[s] || 'bg-white/90 text-stone-600'}`}>
                 {s}
               </span>
             ))}
           </div>
-          <div className="flex flex-col gap-1 items-end">
-            <div className="bg-white/95 backdrop-blur rounded-xl px-2.5 py-1 flex items-center gap-1 shadow-sm">
-              <Star size={11} className="text-amber-500 fill-amber-500" />
-              <span className="font-bold text-stone-800 text-sm">{place.rating.toFixed(1)}</span>
-              <span className="text-stone-400 text-xs">
-                ({place.userRatingsTotal >= 1000
-                  ? `${(place.userRatingsTotal / 1000).toFixed(1)}k`
-                  : place.userRatingsTotal})
-              </span>
-            </div>
-            {details?.openNow !== undefined && (
-              <div className={`text-xs px-2 py-0.5 rounded-full font-medium ${details.openNow ? 'bg-green-500 text-white' : 'bg-stone-500/80 text-white'}`}>
-                {details.openNow ? 'Open now' : 'Closed'}
-              </div>
-            )}
+          <div className="bg-white/95 backdrop-blur rounded-xl px-2.5 py-1 flex items-center gap-1 shadow-sm">
+            <Star size={11} className="text-amber-500 fill-amber-500" />
+            <span className="font-bold text-stone-800 text-sm">{place.rating.toFixed(1)}</span>
+            <span className="text-stone-400 text-xs">
+              ({place.userRatingsTotal >= 1000
+                ? `${(place.userRatingsTotal / 1000).toFixed(1)}k`
+                : place.userRatingsTotal})
+            </span>
           </div>
         </div>
       </div>
@@ -332,17 +325,17 @@ function CardContent({ place, details }: { place: NearbyPlace; details: PlaceDet
             <PriceTag level={place.priceLevel} className="text-stone-500 shrink-0 mt-0.5" />
           </div>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            {(place.isCurated && place.neighborhood) ? (
-              <span className="flex items-center gap-1 text-xs text-stone-500">
-                <MapPin size={10} className="text-amber-500" />{place.neighborhood}
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 text-xs text-stone-400">
-                <MapPin size={10} />{place.address.split(',').slice(0, 2).join(',')}
-              </span>
-            )}
-            {!place.isCurated && cuisine && cuisine !== 'Restaurant' && (
+            <span className="flex items-center gap-1 text-xs text-stone-500">
+              <MapPin size={10} className="text-amber-500" />
+              {place.neighborhood || place.address.split(',').slice(0, 2).join(',')}
+            </span>
+            {cuisine && cuisine !== 'Restaurant' && (
               <span className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-medium">{cuisine}</span>
+            )}
+            {details?.openNow !== undefined && (
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${details.openNow ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'}`}>
+                {details.openNow ? 'Open now' : 'Closed'}
+              </span>
             )}
           </div>
         </div>
@@ -356,11 +349,40 @@ function CardContent({ place, details }: { place: NearbyPlace; details: PlaceDet
           </div>
         )}
 
-        {/* Why go */}
+        {/* Why go — curated */}
         {place.whyGo && (
           <div className="bg-amber-50 rounded-xl p-3">
             <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Why go</p>
             <p className="text-sm text-stone-700 leading-relaxed">{place.whyGo}</p>
+          </div>
+        )}
+
+        {/* Non-curated: editorial summary or rating context */}
+        {!place.whyGo && (
+          <div className="bg-amber-50 rounded-xl p-3">
+            {details?.editorialSummary ? (
+              <>
+                <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">About</p>
+                <p className="text-sm text-stone-700 leading-relaxed">{details.editorialSummary}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Google rating</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-0.5">
+                    {[1,2,3,4,5].map(s => (
+                      <Star key={s} size={13} className={s <= Math.round(place.rating) ? 'text-amber-400 fill-amber-400' : 'text-stone-300'} />
+                    ))}
+                  </div>
+                  <span className="text-sm font-bold text-stone-700">{place.rating.toFixed(1)}</span>
+                  <span className="text-xs text-stone-400">
+                    ({place.userRatingsTotal >= 1000
+                      ? `${(place.userRatingsTotal / 1000).toFixed(1)}k reviews`
+                      : `${place.userRatingsTotal} reviews`})
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -382,12 +404,7 @@ function CardContent({ place, details }: { place: NearbyPlace; details: PlaceDet
           </div>
         )}
 
-        {/* Editorial summary fallback */}
-        {!place.whyGo && details?.editorialSummary && (
-          <p className="text-stone-600 text-sm leading-relaxed italic">"{details.editorialSummary}"</p>
-        )}
-
-        {/* All signal badges */}
+        {/* Signal badges */}
         {signals.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {signals.map(s => (
@@ -415,8 +432,8 @@ function CardContent({ place, details }: { place: NearbyPlace; details: PlaceDet
           </a>
         )}
 
-        {/* Google reviews — only show if no curated whyGo */}
-        {!place.whyGo && details?.reviews && details.reviews.length > 0 && (
+        {/* Google reviews */}
+        {details?.reviews && details.reviews.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide">What people say</p>
             {details.reviews.slice(0, 2).map((r, i) => (
