@@ -343,71 +343,52 @@ function CardContent({ place, details }: { place: NearbyPlace; details: PlaceDet
       {/* Info — compact scrollable section */}
       <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-3 pb-4 space-y-3">
 
-        {/* Vibe tags — show right at top of info section */}
+        {/* Vibe tags */}
         {place.vibe && place.vibe.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {place.vibe.map(v => (
-              <span key={v} className="bg-stone-100 text-stone-600 text-xs px-2.5 py-1 rounded-full">{v}</span>
+              <span key={v} className="bg-stone-100 text-stone-600 text-xs px-2.5 py-1 rounded-full font-medium">{v}</span>
             ))}
           </div>
         )}
 
-        {/* Why go — curated */}
-        {place.whyGo && (
-          <div className="bg-amber-50 rounded-xl p-3">
-            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Why go</p>
-            <p className="text-sm text-stone-700 leading-relaxed">{place.whyGo}</p>
+        {/* Why go — every card has this, curated = editorial, non-curated = generated */}
+        <div className={`rounded-xl p-3 ${place.isCurated ? 'bg-amber-50' : 'bg-stone-50'}`}>
+          <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${place.isCurated ? 'text-amber-700' : 'text-stone-500'}`}>
+            {place.isCurated ? 'Why go' : 'The case for it'}
+          </p>
+          <p className="text-sm text-stone-700 leading-relaxed">
+            {/* If details loaded an editorial summary, prefer that over generated */}
+            {details?.editorialSummary && !place.isCurated
+              ? details.editorialSummary
+              : place.whyGo || 'Loading…'}
+          </p>
+        </div>
+
+        {/* Known for + Good for — always shown */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-stone-50 rounded-xl p-2.5">
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1">Known for</p>
+            <p className="text-xs text-stone-600 leading-relaxed">{place.knownFor || '—'}</p>
+          </div>
+          <div className="bg-stone-50 rounded-xl p-2.5">
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1">Good for</p>
+            <p className="text-xs text-stone-600 leading-relaxed">{place.goodFor?.slice(0, 3).join(', ') || '—'}</p>
+          </div>
+        </div>
+
+        {/* Drawbacks — honest signals, helps you decide */}
+        {place.drawbacks && place.drawbacks.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {place.drawbacks.map(d => (
+              <span key={d} className="bg-orange-50 text-orange-700 text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
+                <span>⚠️</span> {d}
+              </span>
+            ))}
           </div>
         )}
 
-        {/* Non-curated: editorial summary or rating context */}
-        {!place.whyGo && (
-          <div className="bg-amber-50 rounded-xl p-3">
-            {details?.editorialSummary ? (
-              <>
-                <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">About</p>
-                <p className="text-sm text-stone-700 leading-relaxed">{details.editorialSummary}</p>
-              </>
-            ) : (
-              <>
-                <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Google rating</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-0.5">
-                    {[1,2,3,4,5].map(s => (
-                      <Star key={s} size={13} className={s <= Math.round(place.rating) ? 'text-amber-400 fill-amber-400' : 'text-stone-300'} />
-                    ))}
-                  </div>
-                  <span className="text-sm font-bold text-stone-700">{place.rating.toFixed(1)}</span>
-                  <span className="text-xs text-stone-400">
-                    ({place.userRatingsTotal >= 1000
-                      ? `${(place.userRatingsTotal / 1000).toFixed(1)}k reviews`
-                      : `${place.userRatingsTotal} reviews`})
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Known for + Good for */}
-        {(place.knownFor || place.goodFor) && (
-          <div className="grid grid-cols-2 gap-2">
-            {place.knownFor && (
-              <div className="bg-stone-50 rounded-xl p-2.5">
-                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1">Known for</p>
-                <p className="text-xs text-stone-600 leading-relaxed">{place.knownFor}</p>
-              </div>
-            )}
-            {place.goodFor && (
-              <div className="bg-stone-50 rounded-xl p-2.5">
-                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1">Good for</p>
-                <p className="text-xs text-stone-600 leading-relaxed">{place.goodFor.slice(0, 3).join(', ')}</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Signal badges */}
+        {/* Signal / buzz badges */}
         {signals.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {signals.map(s => (

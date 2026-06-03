@@ -1,4 +1,5 @@
 import { findCuratedMatch, isChain } from './curatedRestaurants'
+import { generateCardMeta } from './generateCardMeta'
 
 const API_KEY = import.meta.env.VITE_GOOGLE_PLACES_KEY || ''
 
@@ -146,12 +147,13 @@ export interface NearbyPlace {
   photoUrl: string
   photoUrls: string[]
   types: string[]
-  // Curated metadata (set when matched against curated list)
+  // Card metadata (curated = hand-written, non-curated = generated)
   neighborhood?: string
   vibe?: string[]
   whyGo?: string
   knownFor?: string
   goodFor?: string[]
+  drawbacks?: string[]
   signals?: string[]
   confidence?: 'high' | 'medium' | 'low'
   editorialScore?: number
@@ -213,10 +215,20 @@ export async function searchNearbyRestaurants(
         whyGo: curated.whyGo,
         knownFor: curated.knownFor,
         goodFor: curated.goodFor,
+        drawbacks: [],   // curated places: no drawbacks listed
         signals: curated.signals,
         confidence: curated.confidence,
         priceLevel: curated.price,
       })
+    } else {
+      // Generate metadata so every card feels complete
+      const meta = generateCardMeta({
+        rating: p.rating,
+        userRatingsTotal: p.user_ratings_total || 0,
+        priceLevel: Math.max(1, Math.min(4, p.price_level || 2)),
+        types: p.types || [],
+      })
+      Object.assign(base, meta)
     }
     return base
   }
