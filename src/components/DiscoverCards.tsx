@@ -252,7 +252,6 @@ function CardContent({ place, details }: { place: NearbyPlace; details: PlaceDet
 
   const cuisine = inferCuisine(place.types)
   const signals = place.signals || []
-  const topSignals = signals.slice(0, 3)
 
   function prevPhoto(e: React.MouseEvent) {
     e.stopPropagation()
@@ -266,44 +265,28 @@ function CardContent({ place, details }: { place: NearbyPlace; details: PlaceDet
   return (
     <div className="w-full h-full flex flex-col">
 
-      {/* Photo */}
-      <div className="relative bg-amber-50 shrink-0" style={{ height: '42%' }} data-photo-area="true">
+      {/* Photo — takes up 55% with gradient overlay containing name */}
+      <div className="relative bg-stone-900 shrink-0" style={{ height: '55%' }} data-photo-area="true">
         {allPhotos.length > 0 ? (
           <img key={allPhotos[photoIndex]} src={allPhotos[photoIndex]} alt={place.name}
-            className="w-full h-full object-cover" />
+            className="w-full h-full object-cover opacity-90" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-7xl opacity-20">🍴</div>
         )}
 
-        {allPhotos.length > 1 && (
-          <>
-            <button onClick={prevPhoto} data-photo-area="true"
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1">
-              <ChevronLeft size={16} />
-            </button>
-            <button onClick={nextPhoto} data-photo-area="true"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1">
-              <ChevronRight size={16} />
-            </button>
-            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1" data-photo-area="true">
-              {allPhotos.map((_, i) => (
-                <button key={i} onClick={e => { e.stopPropagation(); setPhotoIndex(i) }} data-photo-area="true"
-                  className={`w-1.5 h-1.5 rounded-full transition-colors ${i === photoIndex ? 'bg-white' : 'bg-white/50'}`} />
-              ))}
-            </div>
-          </>
-        )}
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
-        {/* Overlays: signal badges left, rating right */}
-        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-start justify-between pointer-events-none">
-          <div className="flex flex-col gap-1">
-            {topSignals.slice(0, 2).map(s => (
-              <span key={s} className={`text-xs px-2 py-0.5 rounded-full font-semibold shadow-sm ${SIGNAL_STYLE[s] || 'bg-white/90 text-stone-600'}`}>
+        {/* Top: signal badges + rating */}
+        <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+          <div className="flex flex-wrap gap-1">
+            {signals.slice(0, 2).map(s => (
+              <span key={s} className={`text-xs px-2 py-0.5 rounded-full font-semibold shadow-sm ${SIGNAL_STYLE[s] || 'bg-white/90 text-stone-700'}`}>
                 {s}
               </span>
             ))}
           </div>
-          <div className="bg-white/95 backdrop-blur rounded-xl px-2.5 py-1 flex items-center gap-1 shadow-sm">
+          <div className="bg-white/95 backdrop-blur rounded-xl px-2.5 py-1 flex items-center gap-1 shadow-sm shrink-0">
             <Star size={11} className="text-amber-500 fill-amber-500" />
             <span className="font-bold text-stone-800 text-sm">{place.rating.toFixed(1)}</span>
             <span className="text-stone-400 text-xs">
@@ -313,34 +296,54 @@ function CardContent({ place, details }: { place: NearbyPlace; details: PlaceDet
             </span>
           </div>
         </div>
-      </div>
 
-      {/* Info */}
-      <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-3 pb-4 space-y-3">
+        {/* Photo nav arrows */}
+        {allPhotos.length > 1 && (
+          <>
+            <button onClick={prevPhoto} data-photo-area="true"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-1.5 transition-colors">
+              <ChevronLeft size={16} />
+            </button>
+            <button onClick={nextPhoto} data-photo-area="true"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-1.5 transition-colors">
+              <ChevronRight size={16} />
+            </button>
+          </>
+        )}
 
-        {/* Name + price + location */}
-        <div>
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-['Playfair_Display'] font-bold text-stone-800 text-xl leading-tight">{place.name}</h3>
-            <PriceTag level={place.priceLevel} className="text-stone-500 shrink-0 mt-0.5" />
-          </div>
+        {/* Bottom of photo: name, location, tags */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-none">
+          <h3 className="font-['Playfair_Display'] font-bold text-white text-2xl leading-tight drop-shadow-sm">{place.name}</h3>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            <span className="flex items-center gap-1 text-xs text-stone-500">
-              <MapPin size={10} className="text-amber-500" />
+            <span className="flex items-center gap-1 text-xs text-white/80">
+              <MapPin size={10} />
               {place.neighborhood || place.address.split(',').slice(0, 2).join(',')}
             </span>
             {cuisine && cuisine !== 'Restaurant' && (
-              <span className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-medium">{cuisine}</span>
+              <span className="bg-white/20 backdrop-blur text-white text-xs px-2 py-0.5 rounded-full">{cuisine}</span>
             )}
+            <PriceTag level={place.priceLevel} className="text-white/80" />
             {details?.openNow !== undefined && (
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${details.openNow ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'}`}>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${details.openNow ? 'bg-green-500/90 text-white' : 'bg-white/20 text-white/70'}`}>
                 {details.openNow ? 'Open now' : 'Closed'}
               </span>
             )}
           </div>
+          {/* Photo dots */}
+          {allPhotos.length > 1 && (
+            <div className="flex gap-1 mt-2">
+              {allPhotos.map((_, i) => (
+                <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === photoIndex ? 'bg-white' : 'bg-white/40'}`} />
+              ))}
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Vibe tags */}
+      {/* Info — compact scrollable section */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-3 pb-4 space-y-3">
+
+        {/* Vibe tags — show right at top of info section */}
         {place.vibe && place.vibe.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {place.vibe.map(v => (

@@ -789,12 +789,15 @@ export const CHAIN_NAMES = new Set([
   'wingstop', 'raising canes', 'popeyes', 'kfc', 'pizza hut', 'dominos',
   'little caesars', 'papa johns', 'fatburger', 'islands', 'sweetgreen',
   'tender greens', 'lemonade', 'rubios', 'wahoos', 'souplantation',
-  'hometown buffet', 'golden corral', 'denny\'s', 'jack in the box',
-  'norm\'s', 'norm s', 'benihana', 'nobu', 'mastros', 'fleming\'s',
-  'morton\'s', 'ruth\'s chris', 'capital grille', 'seasons 52',
-  'california dreaming', 'legacy grill', 'the palm', 'bonefish grill',
-  'longhorn steakhouse', 'texas roadhouse', 'chick fil a', 'whataburger',
-  'sonic', 'arby\'s', 'dairy queen', 'culvers', 'portillos',
+  'hometown buffet', 'golden corral', 'dennys', 'jack in the box',
+  'norms', 'benihana', 'nobu', 'mastros', 'flemings',
+  'mortons', 'ruths chris', 'capital grille', 'seasons 52',
+  'the palm', 'bonefish grill', 'longhorn steakhouse', 'texas roadhouse',
+  'chick fil a', 'whataburger', 'sonic', 'arbys', 'dairy queen',
+  'culvers', 'portillos', 'genwa', 'genwa korean bbq',
+  'sugarfish', 'blue ribbon sushi', 'nobu restaurant',
+  'the original pancake house', 'ihop', 'dennys diner',
+  'bubba gump', 'hard rock cafe', 'rainforest cafe',
 ])
 
 export function isChain(name: string): boolean {
